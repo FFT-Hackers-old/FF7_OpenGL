@@ -1,0 +1,10 @@
+target_sources(AaliGL
+	PRIVATE
+		${CMAKE_CURRENT_LIST_DIR}/defs.h
+		${CMAKE_CURRENT_LIST_DIR}/battle.c
+		${CMAKE_CURRENT_LIST_DIR}/field.c
+		${CMAKE_CURRENT_LIST_DIR}/file.c
+		${CMAKE_CURRENT_LIST_DIR}/graphics.c
+		${CMAKE_CURRENT_LIST_DIR}/loaders.c
+		${CMAKE_CURRENT_LIST_DIR}/misc.c
+)
