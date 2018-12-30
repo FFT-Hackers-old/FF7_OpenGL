@@ -21,7 +21,7 @@
  */
 
 #include <stdio.h>
-#include <libpng12/png.h>
+#include <png.h>
 #include <zlib.h>
 #include <direct.h>
 
