@@ -71,7 +71,7 @@ bool write_ctx(char *filename, uint width, uint height, uint texture)
 		
 		if(trace_all) trace("Creating directory %s\n", tmp);
 		
-		mkdir(tmp);
+		_mkdir(tmp);
 	}
 
 	if(fopen_s(&f, filename, "wb"))

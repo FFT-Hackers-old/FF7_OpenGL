@@ -19,6 +19,7 @@ if (SUPERBUILD)
 		DEPENDS
 		glew
 		zlib
+		libpng
 	)
 	ExternalProject_Add_Step(
 		ff7_opengl
