@@ -1,17 +1,33 @@
 cmake_minimum_required(VERSION 3.12)
-project(FF7_OpenGL_SuperBuild)
 
-include(ExternalProject)
-set_directory_properties(PROPERTIES EP_BASE "${CMAKE_BINARY_DIR}/ep")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+option(SUPERBUILD "Build the project using a superbuild" ON)
 
-add_subdirectory(vendor)
+if (SUPERBUILD)
+	project(SUPERBUILD NONE)
+	set_directory_properties(PROPERTIES EP_BASE "${CMAKE_BINARY_DIR}/ep")
+	add_subdirectory(third_party)
+	include(ExternalProject)
+	ExternalProject_Add(
+		ff7_opengl
+		SOURCE_DIR	"${CMAKE_SOURCE_DIR}"
+		CMAKE_ARGS
+			"-DSUPERBUILD=OFF"
+			"-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+			"-DCMAKE_PREFIX_PATH=${CMAKE_BINARY_DIR}/vendor"
+			"-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}"
+		DEPENDS
+		glew
+	)
+	ExternalProject_Add_Step(
+		ff7_opengl
+		reconfigure
+		COMMAND ${CMAKE_COMMAND} -E echo "Forcing a superbuild reconfigure"
+		DEPENDEES download
+		DEPENDERS configure
+	)
+	return()
+endif()
 
-ExternalProject_Add(
-	ff7_opengl_ep
-	SOURCE_DIR	"${CMAKE_SOURCE_DIR}/ff7_opengl"
-	CMAKE_ARGS
-	"-DGLEW_DIR=${CMAKE_BINARY_DIR}/ep/Install/glew_ep"
-	"-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}"
-	DEPENDS
-	glew_ep
-)
+project(FF7_OpenGL)
+add_subdirectory(src)

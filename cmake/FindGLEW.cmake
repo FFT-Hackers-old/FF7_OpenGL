@@ -1,8 +1,20 @@
 include(FindPackageHandleStandardArgs)
 
+find_library(
+	GLEW_LIBRARY
+	glew glew32 glew32s
+	PATH_SUFFIXES
+	lib
+)
+
+find_path(
+	GLEW_INCLUDE_DIR
+	GL/glew.h
+	PATH_SUFFIXES
+	include
+)
+
 add_library(GLEW::GLEW STATIC IMPORTED)
-set(GLEW_LIBRARY "${GLEW_DIR}/lib/glew.lib")
-set(GLEW_INCLUDE_DIR "${GLEW_DIR}/include")
 
 set_target_properties(
     GLEW::GLEW
@@ -14,7 +26,5 @@ set_target_properties(
     INTERFACE_COMPILE_DEFINITIONS
     "-DGLEW_STATIC=1"
 )
-
-add_dependencies(GLEW::GLEW glew_ep)
 
 find_package_handle_standard_args(GLEW DEFAULT_MSG GLEW_LIBRARY GLEW_INCLUDE_DIR)
