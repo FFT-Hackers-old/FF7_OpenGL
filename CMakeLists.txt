@@ -25,6 +25,7 @@ if (SUPERBUILD)
 		COMMAND ${CMAKE_COMMAND} -E echo "Forcing a superbuild reconfigure"
 		DEPENDEES download
 		DEPENDERS configure
+		ALWAYS ON
 	)
 	return()
 endif()
