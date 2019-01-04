@@ -18,6 +18,7 @@ if (SUPERBUILD)
 			"-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}"
 		DEPENDS
 		glew
+		zlib
 	)
 	ExternalProject_Add_Step(
 		ff7_opengl
