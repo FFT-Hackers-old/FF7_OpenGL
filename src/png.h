@@ -23,7 +23,7 @@
 #ifndef _PNG_H_
 #define _PNG_H_
 
-bool write_png(char *filename, uint width, uint height, char *data);
-uint *read_png(char *filename, uint *_width, uint *_height);
+//bool write_png(char *filename, uint width, uint height, char *data);
+//uint *read_png(char *filename, uint *_width, uint *_height);
 
 #endif

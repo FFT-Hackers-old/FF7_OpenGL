@@ -254,7 +254,7 @@ bool gl_special_case(GLenum primitivetype, uint vertextype, struct nvertex *vert
 			if((uint)VREF(tex_header, file.pc_name) > 32)
 			{
 				// avoid filtering window borders
-				if(!strnicmp(VREF(tex_header, file.pc_name), "menu/btl_win_c_", strlen("menu/btl_win_c_") - 1) && VREF(texture_set, palette_index) == 0) current_state.texture_filter = false;
+				if(!_strnicmp(VREF(tex_header, file.pc_name), "menu/btl_win_c_", strlen("menu/btl_win_c_") - 1) && VREF(texture_set, palette_index) == 0) current_state.texture_filter = false;
 			}
 		}
 

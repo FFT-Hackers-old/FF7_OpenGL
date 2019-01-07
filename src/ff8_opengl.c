@@ -169,7 +169,7 @@ struct ff8_tex_header *ff8_load_tex_file(struct file_context *file_context, char
 	{
 		if(ret->file.pc_name[i] == '.')
 		{
-			if(!stricmp(&ret->file.pc_name[i], ".TEX")) ret->file.pc_name[i] = 0;
+			if(!_stricmp(&ret->file.pc_name[i], ".TEX")) ret->file.pc_name[i] = 0;
 			else ret->file.pc_name[i] = '_';
 		}
 	}

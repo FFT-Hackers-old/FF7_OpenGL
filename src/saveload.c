@@ -48,7 +48,7 @@ void make_path(char *name)
 		strncpy(tmp, name, next - name);
 		tmp[next - name] = 0;
 		
-		mkdir(tmp);
+		_mkdir(tmp);
 	}
 }
 

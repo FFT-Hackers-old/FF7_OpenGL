@@ -3,12 +3,38 @@
     {
       "name": "x86-Release",
       "generator": "Ninja",
+      "configurationType": "Release",
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\FF7_OpenGL\\build\\${name}",
+      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\FF7_OpenGL\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": ""
+    },
+    {
+      "name": "x86-RelWithDebInfo",
+      "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
       "inheritEnvironments": [
         "msvc_x86"
       ],
-      "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
-      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
+      "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\FF7_OpenGL\\build\\${name}",
+      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\FF7_OpenGL\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": ""
+    },
+    {
+      "name": "x86-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [
+        "msvc_x86"
+      ],
+      "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\FF7_OpenGL\\build\\${name}",
+      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\FF7_OpenGL\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": ""
