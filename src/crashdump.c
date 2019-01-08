@@ -92,7 +92,7 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 
 	// save crash dump to game directory
 	sprintf(filename, "%s/%s", basedir, crash_dmp);
-	dbghelp = LoadLibrary("dbghelp.dll");
+	dbghelp = LoadLibrary(TEXT("dbghelp.dll"));
 	if (dbghelp != NULL)
 	{
 		typedef BOOL (WINAPI *MiniDumpWriteDump_t)(HANDLE, DWORD, HANDLE,
