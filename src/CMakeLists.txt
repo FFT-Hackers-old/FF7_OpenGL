@@ -13,5 +13,5 @@ add_subdirectory(gl)
 
 target_include_directories(ff7_opengl PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(ff7_opengl GLEW::GLEW ZLib::ZLib PNG::PNG)
-target_compile_definitions(ff7_opengl PRIVATE -D_CRT_SECURE_NO_WARNINGS=1 -DUNICODE=1 -D_UNICODE=1)
+target_compile_definitions(ff7_opengl PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
 install(TARGETS ff7_opengl RUNTIME DESTINATION bin)
