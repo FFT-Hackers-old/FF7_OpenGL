@@ -1641,7 +1641,7 @@ char *gldebug_severities[] = {
 	"Low",
 };
 
-void APIENTRY gldebug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam)
+void APIENTRY gldebug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
 {
 	info("OpenGL debug; Severity: %s, %i %s %s: %s\n", gldebug_severities[severity - GL_DEBUG_SEVERITY_HIGH_ARB], id, gldebug_sources[source - GL_DEBUG_SOURCE_API_ARB], gldebug_types[type - GL_DEBUG_TYPE_ERROR_ARB], message);
 }
