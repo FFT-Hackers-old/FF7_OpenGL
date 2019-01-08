@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <png.h>
+#include <pngcustom.h>
 #include <zlib.h>
 #include <direct.h>
 
