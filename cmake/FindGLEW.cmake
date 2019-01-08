@@ -1,5 +1,7 @@
 include(FindPackageHandleStandardArgs)
 
+find_package(OpenGL REQUIRED)
+
 if(NOT GLEW_FOUND)
 	find_library(
 		GLEW_LIBRARY
@@ -25,7 +27,9 @@ if(NOT GLEW_FOUND)
 		INTERFACE_INCLUDE_DIRECTORIES
 		"${GLEW_INCLUDE_DIR}"
 		INTERFACE_COMPILE_DEFINITIONS
-		"-DGLEW_STATIC=1"
+		GLEW_STATIC=1
+		INTERFACE_LINK_LIBRARIES
+		OpenGL::GL
 	)
 
 	find_package_handle_standard_args(GLEW DEFAULT_MSG GLEW_LIBRARY GLEW_INCLUDE_DIR)

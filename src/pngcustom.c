@@ -20,9 +20,10 @@
  * png.c - load/save routines for PNG images
  */
 
+#include <setjmp.h>
 #include <stdio.h>
-#include <png.h>
 #include <zlib.h>
+#include <png.h>
 #include <direct.h>
 
 #include "types.h"
@@ -72,12 +73,13 @@ bool write_png(char *filename, uint width, uint height, char *data)
 		return false;
 	}
 
+    /*
 	if(setjmp(png_ptr->jmpbuf))
 	{
 		png_destroy_write_struct(&png_ptr, &info_ptr);
 		fclose(f);
 		return false;
-	}
+	}*/
 	
 	png_init_io(png_ptr, f);
 	
@@ -133,12 +135,13 @@ uint *read_png(char *filename, uint *_width, uint *_height)
 		return 0;
 	}
 
+    /*
 	if(setjmp(png_ptr->jmpbuf))
 	{
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
 		fclose(f);
 		return 0;
-	}
+	}*/
 
 	png_init_io(png_ptr, f);
 
