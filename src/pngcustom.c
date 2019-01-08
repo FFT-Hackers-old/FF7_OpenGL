@@ -22,11 +22,11 @@
 
 #include <stdio.h>
 #include <png.h>
-#include <pngcustom.h>
 #include <zlib.h>
 #include <direct.h>
 
 #include "types.h"
+#include "pngcustom.h"
 #include "log.h"
 #include "globals.h"
 #include "gl.h"
