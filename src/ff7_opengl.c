@@ -41,8 +41,8 @@ void ff7_read_basedir()
 	uint basedir_length = sizeof(basedir);
 	HKEY ff7_regkey;
 
-	RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Square Soft, Inc.\\Final Fantasy VII", 0, KEY_QUERY_VALUE, &ff7_regkey);
-	RegQueryValueEx(ff7_regkey, "AppPath", 0, 0, basedir, &basedir_length);
+	RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Square Soft, Inc.\\Final Fantasy VII"), 0, KEY_QUERY_VALUE, &ff7_regkey);
+	RegQueryValueEx(ff7_regkey, TEXT("AppPath"), 0, 0, basedir, &basedir_length);
 	basedir[sizeof(basedir) - 1] = 0;
 }
 

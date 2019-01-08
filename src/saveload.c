@@ -32,6 +32,7 @@
 #include "cfg.h"
 #include "compile_cfg.h"
 #include "png.h"
+#include "pngcustom.h"
 #include "ctx.h"
 #include "macro.h"
 

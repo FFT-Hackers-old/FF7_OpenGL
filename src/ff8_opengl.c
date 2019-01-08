@@ -277,8 +277,8 @@ void ff8_read_basedir()
 	uint basedir_length = sizeof(basedir);
 	HKEY ff8_regkey;
 
-	RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Square Soft, Inc\\Final Fantasy VIII\\1.00", 0, KEY_QUERY_VALUE, &ff8_regkey);
-	RegQueryValueEx(ff8_regkey, "AppPath", 0, 0, basedir, &basedir_length);
+	RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Square Soft, Inc\\Final Fantasy VIII\\1.00"), 0, KEY_QUERY_VALUE, &ff8_regkey);
+	RegQueryValueEx(ff8_regkey, TEXT("AppPath"), 0, 0, basedir, &basedir_length);
 	basedir[sizeof(basedir) - 1] = 0;
 }
 

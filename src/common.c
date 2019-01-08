@@ -1893,7 +1893,7 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 		if(fullscreen)
 		{
 			// default fullscreen mode is current desktop resolution
-			EnumDisplaySettingsA(NULL, ENUM_CURRENT_SETTINGS, &dmScreenSettings);
+			EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dmScreenSettings);
 
 			window_size_x = dmScreenSettings.dmPelsWidth;
 			window_size_y = dmScreenSettings.dmPelsHeight;
