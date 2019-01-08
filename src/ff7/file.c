@@ -501,10 +501,10 @@ uint get_filesize(struct ff7_file *file)
         uint offset;
         uint size;
 
-        offset = ftell(file->fd);
-        fseek(file->fd, 0, SEEK_END);
-        size = ftell(file->fd);
-        fseek(file->fd, offset, SEEK_SET);
+        offset = ftell(file->fd->fd);
+        fseek(file->fd->fd, 0, SEEK_END);
+        size = ftell(file->fd->fd);
+        fseek(file->fd->fd, offset, SEEK_SET);
 
 		return size;
 	}
