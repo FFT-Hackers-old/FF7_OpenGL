@@ -184,7 +184,7 @@ uint ff7_get_movie_frame()
 
 uint ff8_movie_frames;
 
-void ff8_prepare_movie(unsigned char disc, unsigned char movie)
+void ff8_prepare_movie(uint disc, uint movie)
 {
 	char fmvName[512];
 	char camName[512];
