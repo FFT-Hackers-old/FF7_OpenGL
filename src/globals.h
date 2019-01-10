@@ -27,7 +27,6 @@
 
 #include "types.h"
 #include "ff7.h"
-#include "ff8.h"
 
 extern uint version;
 
@@ -45,7 +44,6 @@ extern bool indirect_rendering;
 extern struct texture_format *texture_format;
 
 extern struct ff7_externals ff7_externals;
-extern struct ff8_externals ff8_externals;
 extern struct common_externals common_externals;
 extern struct driver_stats stats;
 
@@ -60,8 +58,6 @@ extern struct game_mode modes[];
 extern uint num_modes;
 
 extern uint text_colors[];
-
-extern bool ff8;
 
 extern uint frame_counter;
 

@@ -76,19 +76,9 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 	// show cursor in case it was hidden
 	ShowCursor(true);
 
-	if(!ff8)
-	{
-		save = MessageBoxA(0, "Oops! Something very bad happened\nWrote crash.dmp to FF7 install dir.\n"
-			"Please provide a copy of it along with APP.LOG when reporting this error.\n"
-			"Write emergency save to save/crash.ff7?", "Error", MB_YESNO) == IDYES;
-	}
-	else
-	{
-		MessageBoxA(0, "Oops! Something very bad happened\nWrote crash.dmp to FF8 install dir.\n"
-			"Please provide a copy of it along with APP.LOG when reporting this error.\n", "Error", MB_OK);
-
-		save = false;
-	}
+	save = MessageBoxA(0, "Oops! Something very bad happened\nWrote crash.dmp to FF7 install dir.\n"
+		"Please provide a copy of it along with APP.LOG when reporting this error.\n"
+		"Write emergency save to save/crash.ff7?", "Error", MB_YESNO) == IDYES;
 
 	// save crash dump to game directory
 	sprintf(filename, "%s/%s", basedir, crash_dmp);
@@ -116,34 +106,33 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 		FreeLibrary(dbghelp);
 	}
 
-	if(!ff8)
+
+	sprintf(filename, "%s/%s", basedir, "save/crash.ff7");
+
+	// try to dump the current savemap from memory
+    // the savemap could be old, inconsistent or corrupted at this point
+	// avoid playing from an emergency save i at all possible!
+    if(save)
 	{
-		sprintf(filename, "%s/%s", basedir, "save/crash.ff7");
+        FILE *f = fopen(filename, "wb");
+		uint magic = 0x6277371;
+		uint bitmask = 1;
+        struct savemap dummy[14];
 
-		// try to dump the current savemap from memory
-		// the savemap could be old, inconsistent or corrupted at this point
-		// avoid playing from an emergency save if at all possible!
-		if(save)
-		{
-			FILE *f = fopen(filename, "wb");
-			uint magic = 0x6277371;
-			uint bitmask = 1;
-			struct savemap dummy[14];
+		memset(dummy, 0, sizeof(dummy));
 
-			memset(dummy, 0, sizeof(dummy));
+		memcpy(ff7_externals.savemap->preview_location, save_name, sizeof(save_name));
 
-			memcpy(ff7_externals.savemap->preview_location, save_name, sizeof(save_name));
+        ff7_externals.savemap->checksum = ff7_checksum(&(ff7_externals.savemap->preview_level));
 
-			ff7_externals.savemap->checksum = ff7_checksum(&(ff7_externals.savemap->preview_level));
-
-			fwrite(&magic, 4, 1, f);
-			fwrite("", 1, 1, f);
-			fwrite(&bitmask, 4, 1, f);
-			fwrite(ff7_externals.savemap, sizeof(*ff7_externals.savemap), 1, f);
-			fwrite(dummy, sizeof(dummy), 1, f);
-			fclose(f);
-		}
+		fwrite(&magic, 4, 1, f);
+		fwrite("", 1, 1, f);
+        fwrite(&bitmask, 4, 1, f);
+		fwrite(ff7_externals.savemap, sizeof(*ff7_externals.savemap), 1, f);
+		fwrite(dummy, sizeof(dummy), 1, f);
+        fclose(f);
 	}
+
 
 	error("unhandled exception\n");
 

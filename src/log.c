@@ -101,8 +101,7 @@ const char ff8_filter[] = "Patch ";
 
 void external_debug_print(const char *str)
 {
-	if(!ff8 && !strncmp(str, ff7_filter, sizeof(ff7_filter) - 1)) return;
-	if(ff8 && !strncmp(str, ff8_filter, sizeof(ff8_filter) - 1)) return;
+	if(!strncmp(str, ff7_filter, sizeof(ff7_filter) - 1)) return;
 
 	if(show_applog) debug_print(str);
 

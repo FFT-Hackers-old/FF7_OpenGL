@@ -33,16 +33,12 @@
 #include "macro.h"
 #include "common.h"
 #include "ff7.h"
-#include "ff8.h"
 #include "patch.h"
 #include "gl.h"
 #include "movies.h"
 #include "music.h"
 #include "saveload.h"
 #include "matrix.h"
-
-// global FF7/FF8 flag, available after version check
-bool ff8 = false;
 
 // window dimensions requested by the game, normally 640x480
 uint width;
@@ -64,7 +60,7 @@ bool indirect_rendering = false;
 HDC hDC = 0;
 HWND hwnd = 0;
 
-// game-specific data, see ff7_data.h/ff8_data.h
+// game-specific data, see ff7_data.h
 uint text_colors[NUM_TEXTCOLORS];
 unsigned char font_map[256];
 struct game_mode modes[64];
@@ -73,10 +69,9 @@ uint num_modes;
 // memory locations, replaced functions or patching offsets
 // some addresses in FF7 are sourced from static tables in the
 // externals_102_xx.h files but most of them are computed at runtime,
-// see ff7_data.h/ff8_data.h
+// see ff7_data.h
 struct common_externals common_externals;
 struct ff7_externals ff7_externals;
-struct ff8_externals ff8_externals;
 
 // various statistics, collected for display purposes only EXCEPT for the
 // external cache size
@@ -241,8 +236,7 @@ struct game_mode *getmode()
 		last_mode = *common_externals._mode;
 	}
 
-	if(!ff8) return &modes[4];
-	else return &modes[11];
+	return &modes[4];
 }
 
 // game mode usually doesn't change in the middle of a frame and even if it
@@ -308,7 +302,7 @@ void common_cleanup(struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: cleanup\n");
 
-	if(!ff8) ff7_release_movie_objects();
+	ff7_release_movie_objects();
 
 	unreplace_functions();
 
@@ -443,7 +437,7 @@ void common_flip(struct game_obj *game_object)
 #endif
 
 	// new framelimiter, not based on vsync
-	if(!ff8 && use_new_timer)
+	if(use_new_timer)
 	{
 		time_t gametime;
 		double framerate = mode->framerate;
@@ -458,7 +452,7 @@ void common_flip(struct game_obj *game_object)
 	if(!fullscreen) ShowCursor(true);
 
 	// fix unresponsive quit menu
-	if(!ff8 && VREF(game_object, field_A54))
+	if(VREF(game_object, field_A54))
 	{
 		MSG msg;
 
@@ -475,9 +469,6 @@ void common_flip(struct game_obj *game_object)
 
 	// check for gl errors once per frame
 	gl_error();
-
-	// FF8 does not clear the screen properly in the card game module
-	if(ff8 && mode->driver_mode == MODE_CARDGAME) common_clear_all(0);
 }
 
 // called by the game to clear an aspect of the back buffer, mostly called from
@@ -535,7 +526,7 @@ void common_setviewport(uint _x, uint _y, uint _w, uint _h, struct game_obj *gam
 	// emulate the transformation applied by an equivalent Direct3D viewport
 	d3dviewport_matrix._11 = (float)_w / (float)width;
 	// no idea why this is necessary
-	if(!ff8 && mode == MODE_BATTLE) d3dviewport_matrix._22 = 1.0f;
+	if(mode == MODE_BATTLE) d3dviewport_matrix._22 = 1.0f;
 	else d3dviewport_matrix._22 = (float)_h / (float)height;
 	d3dviewport_matrix._41 = (((float)_x + (float)_w / 2.0f) - (float)width / 2.0f) / ((float)width / 2.0f);
 	d3dviewport_matrix._42 = -(((float)_y + (float)_h / 2.0f) - (float)height / 2.0f) / ((float)height / 2.0f);
@@ -564,8 +555,7 @@ bool common_prepare_polygon_set(struct polygon_set *polygon_set)
 // called by the game to load a group from a .p file into a renderable format
 bool common_load_group(uint group_num, struct matrix_set *matrix_set, struct p_hundred *hundred_data, struct p_group *group_data, struct polygon_data *polygon_data, struct polygon_set *polygon_set, struct game_obj *game_object)
 {
-	if(!ff8) return ff7gl_load_group(group_num, matrix_set, hundred_data, group_data, polygon_data, (struct ff7_polygon_set *)polygon_set, (struct ff7_game_obj *)game_object);
-	else return common_externals.generic_load_group(group_num, matrix_set, hundred_data, group_data, polygon_data, polygon_set, game_object);
+	return ff7gl_load_group(group_num, matrix_set, hundred_data, group_data, polygon_data, (struct ff7_polygon_set *)polygon_set, (struct ff7_game_obj *)game_object);
 }
 
 // called by the game to update one of the matrices in a matrix_set structure
@@ -629,8 +619,6 @@ void common_unload_texture(struct texture_set *texture_set)
 	}
 
 	if(current_state.texture_set == VPTR(texture_set)) current_state.texture_set = 0;
-
-	if(ff8) ff8_unload_texture(VPTR(texture_set));
 }
 
 // create a texture from an area of the framebuffer, source rectangle is encoded into tex header
@@ -727,9 +715,6 @@ _inline uint pal2bgra(uint pixel, uint *palette, uint palette_offset, uint color
 void convert_image_data(unsigned char *image_data, uint *converted_image_data, uint w, uint h, struct texture_format *tex_format, bool invert_alpha, bool color_key, uint palette_offset, uint reference_alpha)
 {
 	uint i, j, o = 0, c = 0;
-
-	// invalid texture in FF8, do not attempt to convert
-	if(ff8 && tex_format->bytesperpixel == 0) return;
 
 	// paletted source data (4-bit palettes are expanded to 8-bit by the game)
 	if(tex_format->bytesperpixel == 1)
@@ -836,17 +821,8 @@ struct texture_set *common_load_texture(struct texture_set *_texture_set, struct
 	// texture handle array may not have been initialized
 	if(!VREF(texture_set, texturehandle))
 	{
-		// allocate some more textures just in case, there could be more palettes we don't know about yet
-		// FF8 likes to change its mind about just how many palettes a texture has
 		VRASS(texture_set, ogl.gl_set->textures, VREF(tex_header, palettes) > 0 ? VREF(tex_header, palettes) * 2 : 1);
 		VRASS(texture_set, texturehandle, driver_calloc(VREF(texture_set, ogl.gl_set->textures), sizeof(GLuint)));
-
-		if(ff8 && VREF(tex_header, version) != FB_TEX_VERSION)
-		{
-			external_free(VREF(tex_header, old_palette_data));
-			VRASS(tex_header, old_palette_data, 0);
-		}
-
 		stats.texture_count++;
 	}
 
@@ -894,54 +870,34 @@ struct texture_set *common_load_texture(struct texture_set *_texture_set, struct
 	// convert texture data from source format and load it
 	if(texture_format != 0 && VREF(tex_header, image_data) != 0)
 	{
-		// detect changes in palette data for FF8, we can't trust it to notify us
-		if(ff8 && VREF(tex_header, palettes) > 0 && VREF(tex_header, version) != FB_TEX_VERSION)
-		{
-			if(!VREF(tex_header, old_palette_data))
-			{
-				VRASS(tex_header, old_palette_data, external_malloc(4 * tex_format->palette_size));
-			}
-
-			if(memcmp(VREF(tex_header, old_palette_data), tex_format->palette_data, 4 * tex_format->palette_size))
-			{
-				glDeleteTextures(VREF(texture_set, ogl.gl_set->textures), VREF(texture_set, texturehandle));
-				memset(VREF(texture_set, texturehandle), 0, VREF(texture_set, ogl.gl_set->textures) * sizeof(GLuint));
-
-				memcpy(VREF(tex_header, old_palette_data), tex_format->palette_data, 4 * tex_format->palette_size);
-			}
-		}
-
 		// the texture handle for the current palette is missing, convert & load it
-		if(!VREF(texture_set, texturehandle[VREF(tex_header, palette_index)]))
-		{
-			uint c = 0;
-			uint w = VREF(tex_header, version) == FB_TEX_VERSION ? VREF(tex_header, fb_tex.w) : tex_format->width;
-			uint h = VREF(tex_header, version) == FB_TEX_VERSION ? VREF(tex_header, fb_tex.h) : tex_format->height;
-			bool invert_alpha = false;
-			uint *image_data;
-			// pre-calculate some useful data for palette conversion
-			uint palette_offset = VREF(tex_header, palette_index) * VREF(tex_header, palette_entries);
-			uint reference_alpha = (VREF(tex_header, reference_alpha) & 0xFF) << 24;
+        if (!VREF(texture_set, texturehandle[VREF(tex_header, palette_index)]))
+        {
+            uint c = 0;
+            uint w = VREF(tex_header, version) == FB_TEX_VERSION ? VREF(tex_header, fb_tex.w) : tex_format->width;
+            uint h = VREF(tex_header, version) == FB_TEX_VERSION ? VREF(tex_header, fb_tex.h) : tex_format->height;
+            bool invert_alpha = false;
+            uint *image_data;
+            // pre-calculate some useful data for palette conversion
+            uint palette_offset = VREF(tex_header, palette_index) * VREF(tex_header, palette_entries);
+            uint reference_alpha = (VREF(tex_header, reference_alpha) & 0xFF) << 24;
 
-			// detect 16-bit PSX 5551 format with mask bit
-			if(tex_format->bitsperpixel == 16 && tex_format->alpha_mask == 0x8000)
-			{
-				// correct incomplete texture format in FF7
-				if(!ff8)
-				{
-					tex_format->blue_mask =  0x001F;
-					tex_format->green_mask = 0x03E0;
-					tex_format->red_mask =   0x7C00;
-					tex_format->blue_shift =  0;
-					tex_format->green_shift = 5;
-					tex_format->red_shift =  10;
-					tex_format->blue_max =  31;
-					tex_format->green_max = 31;
-					tex_format->red_max =   31;
-				}
+            // detect 16-bit PSX 5551 format with mask bit
+            if (tex_format->bitsperpixel == 16 && tex_format->alpha_mask == 0x8000)
+            {
+                // correct incomplete texture format in FF7
+                tex_format->blue_mask = 0x001F;
+                tex_format->green_mask = 0x03E0;
+                tex_format->red_mask = 0x7C00;
+                tex_format->blue_shift = 0;
+                tex_format->green_shift = 5;
+                tex_format->red_shift = 10;
+                tex_format->blue_max = 31;
+                tex_format->green_max = 31;
+                tex_format->red_max = 31;
 
-				invert_alpha = true;
-			}
+                invert_alpha = true;
+            }
 
 			// check if this texture can be loaded from the modpath, we may not have to do any conversion
 			if(load_external_texture(VPTR(texture_set), VPTR(tex_header))) return VPTR(texture_set);
@@ -949,14 +905,12 @@ struct texture_set *common_load_texture(struct texture_set *_texture_set, struct
 			// allocate PBO
 			image_data = gl_get_pixel_buffer(w * h * 4);
 
-			if(!ff8)
-			{
-				// find out if color keying is enabled for this texture
-				color_key = VREF(tex_header, color_key);
 
-				// find out if color keying is enabled for this particular palette
-				if(VREF(tex_header, use_palette_colorkey)) color_key = VREF(tex_header, palette_colorkey[VREF(tex_header, palette_index)]);
-			}
+			// find out if color keying is enabled for this texture
+			color_key = VREF(tex_header, color_key);
+
+			// find out if color keying is enabled for this particular palette
+			if(VREF(tex_header, use_palette_colorkey)) color_key = VREF(tex_header, palette_colorkey[VREF(tex_header, palette_index)]);
 
 			// convert source data
 			convert_image_data(VREF(tex_header, image_data), image_data, w, h, tex_format, invert_alpha, color_key, palette_offset, reference_alpha);
@@ -1018,63 +972,29 @@ bool common_write_palette(uint source_offset, uint size, void *source, uint dest
 	palette_index = dest_offset / VREF(tex_header, palette_entries);
 	palettes = size / VREF(tex_header, palette_entries);
 
-	if(!ff8)
+
+	// FF7 writes to one palette at a time
+	if(palettes > 1) unexpected("multipalette write\n");
+
+    if(palette_index >= VREF(texture_set, ogl.gl_set->textures))
 	{
-		// FF7 writes to one palette at a time
-		if(palettes > 1) unexpected("multipalette write\n");
-
-		if(palette_index >= VREF(texture_set, ogl.gl_set->textures))
-		{
-			unexpected("palette write outside valid palette area (%i, %i)\n", palette_index, VREF(texture_set, ogl.gl_set->textures));
-			return false;
-		}
-
-		// make sure the palette actually changed to avoid redundant texture reloads
-		if(memcmp(((uint *)VREF(tex_header, tex_format.palette_data)) + dest_offset, ((uint *)source + source_offset), size * 4))
-		{
-			memcpy(((uint *)VREF(tex_header, tex_format.palette_data)) + dest_offset, ((uint *)source + source_offset), size * 4);
-
-			if(!VREF(texture_set, ogl.external))
-			{
-				glDeleteTextures(1, VREFP(texture_set, texturehandle[palette_index]));
-				VRASS(texture_set, texturehandle[palette_index], 0);
-			}
-
-			stats.texture_reloads++;
-		}
+        unexpected("palette write outside valid palette area (%i, %i)\n", palette_index, VREF(texture_set, ogl.gl_set->textures));
+		return false;
 	}
-	else
-	{
-		// FF8 writes multiple palettes in one swath but it always writes whole palettes
-		if(palettes > 1 && size % VREF(tex_header, palette_entries)) unexpected("unaligned multipalette write\n");
 
-		if(!VREF(tex_header, old_palette_data)) return false;
+    // make sure the palette actually changed to avoid redundant texture reloads
+	if(memcmp(((uint *)VREF(tex_header, tex_format.palette_data)) + dest_offset, ((uint *)source + source_offset), size * 4))
+    {
+		memcpy(((uint *)VREF(tex_header, tex_format.palette_data)) + dest_offset, ((uint *)source + source_offset), size * 4);
 
-		// since FF8 may have already modified the palette itself we need to compare the new data to our backup
-		if(memcmp(((uint *)VREF(tex_header, old_palette_data)) + dest_offset, ((uint *)source + source_offset), size * 4))
+        if(!VREF(texture_set, ogl.external))
 		{
-			memcpy(((uint *)VREF(tex_header, old_palette_data)) + dest_offset, ((uint *)source + source_offset), size * 4);
-			memcpy(((uint *)VREF(tex_header, tex_format.palette_data)) + dest_offset, ((uint *)source + source_offset), size * 4);
-
-			// limit write to the palettes that we are aware of
-			if(palette_index >= VREF(texture_set, ogl.gl_set->textures)) palettes = 0;
-			else if(palette_index + palettes > VREF(texture_set, ogl.gl_set->textures)) palettes = VREF(texture_set, ogl.gl_set->textures) - palette_index;
-
-			if(dest_offset + size > VREF(tex_header, tex_format.palette_size))
-			{
-				unexpected("palette write outside advertised palette area (0x%x + 0x%x, 0x%x)\n", dest_offset, size, VREF(tex_header, tex_format.palette_size));
-			}
-
-			// if there's anything left at this point, reload the affected textures
-			if(palettes && !VREF(texture_set, ogl.external))
-			{
-				glDeleteTextures(palettes, VREFP(texture_set, texturehandle[palette_index]));
-				memset(VREFP(texture_set, texturehandle[palette_index]), 0, palettes * sizeof(GLuint));
-			}
-
-			stats.texture_reloads++;
+            glDeleteTextures(1, VREFP(texture_set, texturehandle[palette_index]));
+			VRASS(texture_set, texturehandle[palette_index], 0);
 		}
-	}
+
+		stats.texture_reloads++;
+    }
 
 	// modpath textures don't have palettes, these writes are ignored
 	// TODO: fancy palette cycling emulation?
@@ -1118,7 +1038,7 @@ struct blend_mode *common_blendmode(uint unknown, struct game_obj *game_object)
 		case 3:
 			return &blend_modes[3];
 		case 4:
-			if(!ff8) unexpected("blend mode 4 requested\n");
+            unexpected("blend mode 4 requested\n");
 			return &blend_modes[4];
 	}
 
@@ -1162,7 +1082,6 @@ void internal_set_renderstate(uint state, uint option, struct game_obj *game_obj
 			// noop
 			break;
 
-		// alpha test is used in many places in FF8 instead of color keying
 		case V_ALPHATEST:
 			if(option) glEnable(GL_ALPHA_TEST);
 			else glDisable(GL_ALPHA_TEST);
@@ -1334,11 +1253,8 @@ void common_field_74(uint unknown, struct game_obj *game_object)
 
 // called by the game to render a polygon set
 // in FF7 this is where most of the 3D rendering happens
-// in FF8 this function doesn't do any rendering at all
-void common_field_78(struct polygon_set *polygon_set, struct game_obj *game_object)
-{
-	if(!ff8) ff7gl_field_78((struct ff7_polygon_set *)polygon_set, (struct ff7_game_obj *)game_object);
-	else ff8gl_field_78((struct ff8_polygon_set *)polygon_set, (struct ff8_game_obj *)game_object);
+void common_field_78(struct polygon_set *polygon_set, struct game_obj *game_object){
+    ff7gl_field_78((struct ff7_polygon_set *)polygon_set, (struct ff7_game_obj *)game_object);
 }
 
 // called by the game to render an instance that has been deferred by the above
@@ -1413,7 +1329,6 @@ void common_field_84(uint unknown, struct game_obj *game_object)
 
 // called by the game to setup a new scene for rendering
 // scenes are not stacked in FF7
-// FF8 relies on the ability to stack scenes, saving and later reverting to a previous render state
 bool common_begin_scene(uint unknown, struct game_obj *game_object)
 {
 	VOBJ(game_obj, game_object, game_object);
@@ -1706,7 +1621,6 @@ uint version_check(uint offset)
 	return (*(uint *)(offset));
 }
 
-// figure out if we are running in FF7 or FF8 and detect which version
 uint get_version()
 {
 	uint version_check1 = version_check(0x401004);
@@ -1734,71 +1648,6 @@ uint get_version()
 		info("Auto-detected version: FF7 1.02 Spanish\n");
 		return VERSION_FF7_102_SP;
 	}
-	else if(version_check1 == 0x3885048D && version_check2 == 0x159618)
-	{
-		info("Auto-detected version: FF8 1.2 US English\n");
-		return VERSION_FF8_12_US;
-	}
-	else if(version_check1 == 0x3885048D && version_check2 == 0x1597C8)
-	{
-		info("Auto-detected version: FF8 1.2 US English (Nvidia)\n");
-		return VERSION_FF8_12_US_NV;
-	}
-	else if(version_check1 == 0x1085048D && version_check2 == 0x159B48)
-	{
-		info("Auto-detected version: FF8 1.2 French\n");
-		return VERSION_FF8_12_FR;
-	}
-	else if(version_check1 == 0x1085048D && version_check2 == 0x159CF8)
-	{
-		info("Auto-detected version: FF8 1.2 French (Nvidia)\n");
-		return VERSION_FF8_12_FR_NV;
-	}
-	else if(version_check1 == 0xA885048D && version_check2 == 0x159C48)
-	{
-		info("Auto-detected version: FF8 1.2 German\n");
-		return VERSION_FF8_12_DE;
-	}
-	else if(version_check1 == 0xA885048D && version_check2 == 0x159DF8)
-	{
-		info("Auto-detected version: FF8 1.2 German (Nvidia)\n");
-		return VERSION_FF8_12_DE_NV;
-	}
-	else if(version_check1 == 0x9085048D && version_check2 == 0x159C58)
-	{
-		info("Auto-detected version: FF8 1.2 Spanish\n");
-		return VERSION_FF8_12_SP;
-	}
-	else if(version_check1 == 0x8085048D && version_check2 == 0x159DE8)
-	{
-		info("Auto-detected version: FF8 1.2 Spanish (Nvidia)\n");
-		return VERSION_FF8_12_SP_NV;
-	}
-	else if(version_check1 == 0xB885048D && version_check2 == 0x159BC8)
-	{
-		info("Auto-detected version: FF8 1.2 Italian\n");
-		return VERSION_FF8_12_IT;
-	}
-	else if(version_check1 == 0xB885048D && version_check2 == 0x159D78)
-	{
-		info("Auto-detected version: FF8 1.2 Italian (Nvidia)\n");
-		return VERSION_FF8_12_IT_NV;
-	}
-	else if(version_check1 == 0x2885048D && version_check2 == 0x159598)
-	{
-		info("Auto-detected version: FF8 1.2 US English (Eidos Patch)\n");
-		return VERSION_FF8_12_US_EIDOS;
-	}
-	else if(version_check1 == 0x2885048D && version_check2 == 0x159748)
-	{
-		info("Auto-detected version: FF8 1.2 US English (Eidos Patch) (Nvidia)\n");
-		return VERSION_FF8_12_US_EIDOS_NV;
-	}
-	else if(version_check1 == 0x1B6E9CC && version_check2 == 0x7C8DFFC9)
-	{
-		info("Auto-detected version: FF8 1.2 Japanese\n");
-		return VERSION_FF8_12_JP;
-	}
 
 	return 0;
 }
@@ -1813,7 +1662,7 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 	DEVMODE dmScreenSettings;
 
 	open_applog("app.log");
-	info("FF7/FF8 OpenGL driver version " VERSION PRERELEASE_WARNING "\n");
+	info("FF7 OpenGL driver version " VERSION PRERELEASE_WARNING "\n");
 
 	version = get_version();
 
@@ -1837,20 +1686,15 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 	if(!version)
 	{
 		error("no compatible version found\n");
-		MessageBoxA(hwnd, "Your ff7.exe or ff8.exe is incompatible with this driver and will exit after this message.\n"
+		MessageBoxA(hwnd, "Your ff7.exe is incompatible with this driver and will exit after this message.\n"
 			"Possible reasons for this error:\n"
 			" - You have the faulty \"1.4 XP Patch\" for FF7.\n"
 			" - You have FF7 retail 1.00 version (you need the 1.02 patch).\n"
 			" - You have an unsupported translation of FF7. (US English, French, German and Spanish versions are currently supported)\n"
-			" - You have FF8 retail 1.0 version (you need the 1.2 patch).\n"
-			" - You have FF8 1.2 from Eidos (you need the newer 1.2 patch from Squaresoft).\n"
-			" - You have an unsupported translation of FF8. (US English, French, German, Spanish and Italian versions are currently supported)\n"
 			" - You have a conflicting patch applied.\n\n"
 			, "Error", 0);
 		exit(1);
 	}
-
-	if(version >= VERSION_FF8_12_US) ff8 = true;
 
 	// install crash handler
 	SetUnhandledExceptionFilter(ExceptionHandler);
@@ -1862,15 +1706,7 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 	common_externals.start = (*((uint *)0x400128) + 0x400000);
 
 	// game-specific initialization
-	if(!ff8) ret = ff7_load_driver(VPTR(game_object));
-	else
-	{
-		// VOBJ macro initialized the wrong variable
-		ff7_game_object = 0;
-		ff8_game_object = game_object;
-
-		ret = ff8_load_driver(VPTR(game_object));
-	}
+	ret = ff7_load_driver(VPTR(game_object));
 
 	// catch all applog messages
 	replace_function(common_externals.debug_print, external_debug_print);
@@ -2114,8 +1950,7 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 	}
 
 	// perform any additional initialization that requires the rendering environment to be set up
-	if(!ff8) ff7_post_init();
-	else ff8_post_init();
+	ff7_post_init();
 
 	if(strlen(load_library) > 0)
 	{

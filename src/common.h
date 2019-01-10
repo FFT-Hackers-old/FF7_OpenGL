@@ -37,19 +37,6 @@
 #define VERSION_FF7_102_FR          2
 #define VERSION_FF7_102_DE          3
 #define VERSION_FF7_102_SP          4
-#define VERSION_FF8_12_US           5
-#define VERSION_FF8_12_US_NV        6
-#define VERSION_FF8_12_FR           7
-#define VERSION_FF8_12_FR_NV        8
-#define VERSION_FF8_12_DE           9
-#define VERSION_FF8_12_DE_NV       10
-#define VERSION_FF8_12_SP          11
-#define VERSION_FF8_12_SP_NV       12
-#define VERSION_FF8_12_IT          13
-#define VERSION_FF8_12_IT_NV       14
-#define VERSION_FF8_12_US_EIDOS    15
-#define VERSION_FF8_12_US_EIDOS_NV 16
-#define VERSION_FF8_12_JP          17
 
 #define NV_VERSION (!(version & 1))
 

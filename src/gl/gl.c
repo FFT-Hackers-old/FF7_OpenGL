@@ -248,8 +248,6 @@ void gl_draw_indexed_primitive(GLenum primitivetype, uint vertextype, struct nve
 		glUniform1i(glGetUniformLocation(current_program, "fb_texture"), current_state.fb_texture);
 
 		glUniform1i(glGetUniformLocation(current_program, "modulate_alpha"), true);
-
-		if(ff8 && current_state.fb_texture) glUniform1i(glGetUniformLocation(current_program, "modulate_alpha"), false);
 	}
 
 	// upload vertex data
@@ -343,17 +341,9 @@ bool gl_draw_text(uint x, uint y, uint color, uint alpha, char *fmt, ...)
 
 	len = strlen(text);
 
-	if(!ff8)
-	{
-		ff7_object_a = ff7_externals.menu_objects->font_a;
-		ff7_object_b = ff7_externals.menu_objects->font_b;
-	}
-	else
-	{
-		if(!*ff8_externals.fonts) return false;
-		ff8_object_a = (*ff8_externals.fonts)->font_a;
-		ff8_object_b = (*ff8_externals.fonts)->font_b;
-	}
+	ff7_object_a = ff7_externals.menu_objects->font_a;
+	ff7_object_b = ff7_externals.menu_objects->font_b;
+
 
 	if(!VPTR(object_a)) return false;
 	if(!VREF(object_a, hundred_data)) return false;
@@ -364,8 +354,6 @@ bool gl_draw_text(uint x, uint y, uint color, uint alpha, char *fmt, ...)
 	VASS(font_b, VREF(object_b, hundred_data->texture_set));
 
 	if(!VPTR(font_a) || !VPTR(font_b)) return false;
-
-	if(ff8 && !ff8_externals.get_character_width(50)) return false;
 
 	gl_save_state(&saved_state);
 
@@ -398,8 +386,7 @@ bool gl_draw_text(uint x, uint y, uint color, uint alpha, char *fmt, ...)
 			{x1, y1, z, 1.0f, 0xffffff | alpha << 24, 0, u1, v1},
 		};
 
-		if(!ff8) char_width = (uint)((common_externals.font_info[c] & 0x1F) * (5.0 / 3.0));
-		else char_width = ff8_externals.get_character_width(c) * 2;
+		char_width = (uint)((common_externals.font_info[c] & 0x1F) * (5.0 / 3.0));
 
 		if(text[i] == '\n')
 		{

@@ -182,8 +182,7 @@ void read_cfg()
 	cfg_t *cfg;
 
 	mod_path = _strdup("");
-	if(!ff8) movie_plugin = _strdup("plugins/ffmpeg_movies.fgp");
-	else movie_plugin = _strdup("");
+	movie_plugin = _strdup("plugins/ffmpeg_movies.fgp");
 	music_plugin = _strdup("");
 	vert_source = _strdup("shaders/main.vert");
 	frag_source = _strdup("shaders/main.frag");
@@ -194,8 +193,7 @@ void read_cfg()
 
 	load_library = _strdup("");
 
-	if(!ff8) _snprintf(filename, sizeof(filename), "%s/ff7_opengl.cfg", basedir);
-	else _snprintf(filename, sizeof(filename), "%s/ff8_opengl.cfg", basedir);
+	_snprintf(filename, sizeof(filename), "%s/ff7_opengl.cfg", basedir);
 	
 	cfg = cfg_init(opts, 0);
 
