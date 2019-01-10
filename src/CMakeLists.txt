@@ -15,3 +15,9 @@ target_include_directories(ff7_opengl PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(ff7_opengl GLEW::GLEW ZLib::ZLib PNG::PNG)
 target_compile_definitions(ff7_opengl PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
 install(TARGETS ff7_opengl RUNTIME DESTINATION bin)
+
+add_library(ffmpeg_movies SHARED)
+add_subdirectory(ffmpeg_movies)
+target_link_libraries(ffmpeg_movies GLEW::GLEW)
+
+install(TARGETS ffmpeg_movies RUNTIME DESTINATION bin)
