@@ -2,6 +2,7 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#include <libavutil/frame.h>
 #include <windows.h>
 #include <gl/glew.h>
 #include <math.h>
@@ -15,6 +16,8 @@
 
 // 20 seconds
 #define AUDIO_BUFFER_SIZE 20
+
+#define MAX_AUDIO_FRAME_SIZE 192000
 
 inline double round(double x) { return floor(x + 0.5); }
 
@@ -89,8 +92,6 @@ BOOL APIENTRY DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
 
 __declspec(dllexport) void movie_init(void *plugin_trace, void *plugin_info, void *plugin_glitch, void *plugin_error, void *plugin_draw_movie_quad_bgra, void *plugin_draw_movie_quad_yuv, IDirectSound **plugin_directsound, bool plugin_skip_frames, bool plugin_movie_sync_debug)
 {
-	av_register_all();
-
 	trace = plugin_trace;
 	info = plugin_info;
 	glitch = plugin_glitch;
@@ -123,7 +124,7 @@ __declspec(dllexport) void release_movie_objects()
 
 	if(codec_ctx) avcodec_close(codec_ctx);
 	if(acodec_ctx) avcodec_close(acodec_ctx);
-	if(format_ctx) av_close_input_file(format_ctx);
+	if(format_ctx) avformat_close_input(&format_ctx);
 	if(sound_buffer && *directsound) IDirectSoundBuffer_Release(sound_buffer);
 
 	codec_ctx = 0;
@@ -151,14 +152,14 @@ __declspec(dllexport) uint prepare_movie(char *name)
 	DSBUFFERDESC1 sbdesc;
 	uint ret;
 
-	if(ret = av_open_input_file(&format_ctx, name, NULL, 0, NULL))
+	if(ret = avformat_open_input(&format_ctx, name, NULL, NULL))
 	{
 		error("couldn't open movie file: %s\n", name);
 		release_movie_objects();
 		goto exit;
 	}
 
-	if(av_find_stream_info(format_ctx) < 0)
+	if(avformat_find_stream_info(format_ctx, NULL) < 0)
 	{
 		error("couldn't find stream info\n");
 		release_movie_objects();
@@ -169,8 +170,8 @@ __declspec(dllexport) uint prepare_movie(char *name)
 	audiostream = -1;
 	for(i = 0; i < format_ctx->nb_streams; i++)
 	{
-		if(format_ctx->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO && videostream < 0) videostream = i;
-		if(format_ctx->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO && audiostream < 0) audiostream = i;
+		if(format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO && videostream < 0) videostream = i;
+		if(format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO && audiostream < 0) audiostream = i;
 	}
 
 	if(videostream == -1)
@@ -193,7 +194,7 @@ __declspec(dllexport) uint prepare_movie(char *name)
 		goto exit;
 	}
 
-	if(avcodec_open(codec_ctx, codec) < 0)
+	if(avcodec_open2(codec_ctx, codec, NULL) < 0)
 	{
 		error("couldn't open video codec\n");
 		release_movie_objects();
@@ -211,7 +212,7 @@ __declspec(dllexport) uint prepare_movie(char *name)
 			goto exit;
 		}
 
-		if(avcodec_open(acodec_ctx, acodec) < 0)
+		if(avcodec_open2(acodec_ctx, acodec, NULL) < 0)
 		{
 			error("couldn't open audio codec\n");
 			release_movie_objects();
@@ -236,29 +237,29 @@ __declspec(dllexport) uint prepare_movie(char *name)
 		goto exit;
 	}
 
-	if(!movie_frame) movie_frame = avcodec_alloc_frame();
+	if(!movie_frame) movie_frame = av_frame_alloc();
 
 	if(sws_ctx) sws_freeContext(sws_ctx);
 
-	if(codec_ctx->pix_fmt == PIX_FMT_YUV420P && yuv_fast_path) use_bgra_texture = false;
+	if(codec_ctx->pix_fmt == AV_PIX_FMT_YUV420P && yuv_fast_path) use_bgra_texture = false;
 	else use_bgra_texture = true;
 
 	vbuffer_read = 0;
 	vbuffer_write = 0;
 
-	if(codec_ctx->pix_fmt != PIX_FMT_BGRA && codec_ctx->pix_fmt != PIX_FMT_BGR24 && (codec_ctx->pix_fmt != PIX_FMT_YUV420P || !yuv_fast_path))
+	if(codec_ctx->pix_fmt != AV_PIX_FMT_BGRA && codec_ctx->pix_fmt != AV_PIX_FMT_BGR24 && (codec_ctx->pix_fmt != AV_PIX_FMT_YUV420P || !yuv_fast_path))
 	{
-		sws_ctx = sws_getContext(movie_width, movie_height, codec_ctx->pix_fmt, movie_width, movie_height, PIX_FMT_BGR24, SWS_FAST_BILINEAR | SWS_ACCURATE_RND, NULL, NULL, NULL);
+		sws_ctx = sws_getContext(movie_width, movie_height, codec_ctx->pix_fmt, movie_width, movie_height, AV_PIX_FMT_BGR24, SWS_FAST_BILINEAR | SWS_ACCURATE_RND, NULL, NULL, NULL);
 		info("slow output format from video codec %s; %i\n", codec->name, codec_ctx->pix_fmt);
 	}
 	else sws_ctx = 0;
 
 	if(audiostream != -1)
 	{
-		if(acodec_ctx->sample_fmt != SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != SAMPLE_FMT_S16) error("unsupported sample format, expect garbled audio output\n");
+		if(acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) error("unsupported sample format, expect garbled audio output\n");
 
 		sound_format.cbSize = sizeof(sound_format);
-		sound_format.wBitsPerSample = acodec_ctx->sample_fmt == SAMPLE_FMT_U8 ? 8 : 16;
+		sound_format.wBitsPerSample = acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 8 : 16;
 		sound_format.nChannels = acodec_ctx->channels;
 		sound_format.nSamplesPerSec = acodec_ctx->sample_rate;
 		sound_format.nBlockAlign = sound_format.nChannels * sound_format.wBitsPerSample / 8;
@@ -298,7 +299,7 @@ __declspec(dllexport) void stop_movie()
 
 void buffer_bgra_frame(char *data, int upload_stride)
 {
-	uint upload_width = codec_ctx->pix_fmt == PIX_FMT_BGRA ? upload_stride / 4 : upload_stride / 3;
+	uint upload_width = codec_ctx->pix_fmt == AV_PIX_FMT_BGRA ? upload_stride / 4 : upload_stride / 3;
 
 	if(upload_stride < 0) return;
 
@@ -314,7 +315,7 @@ void buffer_bgra_frame(char *data, int upload_stride)
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, upload_width);
 
-	if(codec_ctx->pix_fmt == PIX_FMT_BGRA) glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, movie_width, movie_height, GL_BGRA, GL_UNSIGNED_BYTE, data);
+	if(codec_ctx->pix_fmt == AV_PIX_FMT_BGRA) glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, movie_width, movie_height, GL_BGRA, GL_UNSIGNED_BYTE, data);
 	else glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, movie_width, movie_height, GL_BGR, GL_UNSIGNED_BYTE, data);
 
 	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
@@ -377,6 +378,28 @@ void draw_yuv_frame(uint buffer_index, bool full_range)
 	draw_movie_quad_yuv(video_buffer[buffer_index].yuv_textures, movie_width, movie_height, full_range);
 }
 
+/*Drop in replacement for the old video and audio decodings function*/
+int custom_decode(AVCodecContext *codec_ctx, AVFrame *frame, int *got_frame, AVPacket *packet)
+{
+	int ret;
+
+	*got_frame = 0;
+
+	if (packet) {
+		ret = avcodec_send_packet(codec_ctx, packet);
+		if (ret < 0)
+			return ret == AVERROR_EOF ? 0 : ret;
+	}
+
+	ret = avcodec_receive_frame(codec_ctx, frame);
+	if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
+		return ret;
+	if (ret >= 0)
+		*got_frame = 1;
+
+	return 0;
+}
+
 // display the next frame
 __declspec(dllexport) bool update_movie_sample()
 {
@@ -395,7 +418,7 @@ __declspec(dllexport) bool update_movie_sample()
 	{
 		if(packet.stream_index == videostream)
 		{
-			avcodec_decode_video2(codec_ctx, movie_frame, &frame_finished, &packet);
+			custom_decode(codec_ctx, movie_frame, &frame_finished, &packet);
 
 			if(frame_finished)
 			{
@@ -408,7 +431,7 @@ __declspec(dllexport) bool update_movie_sample()
 				{
 					skipped_frames++;
 					if(((skipped_frames - 1) & skipped_frames) == 0) glitch("video playback is lagging behind, skipping frames (frame #: %i, skipped: %i, lag: %f)\n", movie_frame_counter, skipped_frames, LAG);
-					av_free_packet(&packet);
+					av_packet_unref(&packet);
 					if(use_bgra_texture) draw_bgra_frame(vbuffer_read);
 					else draw_yuv_frame(vbuffer_read, codec_ctx->color_range == AVCOL_RANGE_JPEG);
 					break;
@@ -435,7 +458,7 @@ __declspec(dllexport) bool update_movie_sample()
 				else if(use_bgra_texture) buffer_bgra_frame(movie_frame->data[0], movie_frame->linesize[0]);
 				else buffer_yuv_frame(movie_frame->data, movie_frame->linesize);
 
-				av_free_packet(&packet);
+				av_packet_unref(&packet);
 
 				if(vbuffer_write == vbuffer_read)
 				{
@@ -451,15 +474,15 @@ __declspec(dllexport) bool update_movie_sample()
 
 		if(packet.stream_index == audiostream)
 		{
-			char buffer_storage[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
+			char buffer_storage[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
 			char *buffer = (char *)(((((uint)buffer_storage) + 15) / 16) * 16);
-			uint size = AVCODEC_MAX_AUDIO_FRAME_SIZE;
+			uint size = MAX_AUDIO_FRAME_SIZE;
 			int used_bytes;
 			char *packet_data = packet.data;
 			uint packet_size = packet.size;
 			uint playcursor;
 			uint writecursor;
-			uint bytespersec = (acodec_ctx->sample_fmt == SAMPLE_FMT_U8 ? 1 : 2) * acodec_ctx->channels * acodec_ctx->sample_rate;
+			uint bytespersec = (acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2) * acodec_ctx->channels * acodec_ctx->sample_rate;
 
 			QueryPerformanceCounter((LARGE_INTEGER *)&now);
 
@@ -469,7 +492,7 @@ __declspec(dllexport) bool update_movie_sample()
 				info("audio: DTS %f PTS %f (timebase %f) placed in sound buffer at real time %f (play %f write %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(acodec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)playcursor / (double)bytespersec, (double)write_pointer / (double)bytespersec);
 			}
 
-			while((used_bytes = avcodec_decode_audio2(acodec_ctx, (int16_t *)buffer, &size, packet_data, packet_size)) > 0)
+			while((used_bytes = custom_decode(acodec_ctx, (int16_t *)buffer, &size, packet_data, packet_size)) > 0)
 			{
 				char *ptr1;
 				char *ptr2;
@@ -494,7 +517,7 @@ __declspec(dllexport) bool update_movie_sample()
 			}
 		}
 
-		av_free_packet(&packet);
+		av_packet_unref(&packet);
 	}
 
 	if(sound_buffer && first_audio_packet)
