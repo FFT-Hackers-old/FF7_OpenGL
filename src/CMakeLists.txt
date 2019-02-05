@@ -17,7 +17,13 @@ target_compile_definitions(ff7_opengl PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
 install(TARGETS ff7_opengl RUNTIME DESTINATION bin)
 
 add_library(ffmpeg_movies SHARED)
+target_include_directories(ffmpeg_movies PRIVATE "${CMAKE_SOURCE_DIR}/third_party/ffmpeg/include")
 add_subdirectory(ffmpeg_movies)
-target_link_libraries(ffmpeg_movies GLEW::GLEW)
+target_link_libraries(ffmpeg_movies GLEW::GLEW 
+	"${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib/avcodec.lib" 
+	"${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib/avformat.lib"
+	"${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib/swscale.lib"
+	"${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib/avutil.lib"
+)
 
 install(TARGETS ffmpeg_movies RUNTIME DESTINATION bin)
