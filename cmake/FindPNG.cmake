@@ -5,7 +5,7 @@ if (NOT PNG_FOUND)
 
 	find_library(
 		PNG_LIBRARY
-		libpng_static libpng16_static libpng libpng16 png png16
+		libpng_static libpng16_static libpng16_staticd libpng libpng16 png png16
 		PATH_SUFFIXES
 		lib
 	)

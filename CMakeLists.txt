@@ -20,6 +20,7 @@ if (SUPERBUILD)
 		glew
 		zlib
 		libpng
+		ffmpeg
 	)
 	ExternalProject_Add_Step(
 		ff7_opengl

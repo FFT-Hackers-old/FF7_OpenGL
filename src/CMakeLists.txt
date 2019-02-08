@@ -1,6 +1,7 @@
 find_package(GLEW REQUIRED)
 find_package(ZLib REQUIRED)
 find_package(PNG REQUIRED)
+find_package(FFMPEG REQUIRED)
 
 add_library(ff7_opengl SHARED cfg.h cfg.c common.h common.c common_imports.h compile_cfg.h
 	crashdump.c crashdump.h ctx.h ctx.c externals_102_de.h externals_102_fr.h externals_102_sp.h externals_102_us.h
@@ -17,13 +18,16 @@ target_compile_definitions(ff7_opengl PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
 install(TARGETS ff7_opengl RUNTIME DESTINATION bin)
 
 add_library(ffmpeg_movies SHARED)
-target_include_directories(ffmpeg_movies PRIVATE "${CMAKE_SOURCE_DIR}/third_party/ffmpeg/include")
+target_include_directories(ffmpeg_movies PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
 add_subdirectory(ffmpeg_movies)
-target_link_libraries(ffmpeg_movies GLEW::GLEW 
-	"${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib/avcodec.lib" 
-	"${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib/avformat.lib"
-	"${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib/swscale.lib"
-	"${CMAKE_SOURCE_DIR}/third_party/ffmpeg/lib/avutil.lib"
+target_link_libraries(ffmpeg_movies
+	GLEW::GLEW 
+	FFMPEG::AVCodec
+	FFMPEG::AVFormat
+	FFMPEG::AVUtil
+	FFMPEG::SWScale
 )
+target_compile_definitions(ffmpeg_movies PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
 
 install(TARGETS ffmpeg_movies RUNTIME DESTINATION bin)
+install(FILES ${FFMPEG_AVCODEC_DLL} ${FFMPEG_AVUTIL_DLL} ${FFMPEG_AVFORMAT_DLL} ${FFMPEG_SWSCALE_DLL} DESTINATION bin)
