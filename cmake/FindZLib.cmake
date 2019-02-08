@@ -3,7 +3,7 @@ include(FindPackageHandleStandardArgs)
 if (NOT ZLIB_FOUND)
 	find_library(
 		ZLIB_LIBRARY
-		zlibstatic zlib zlibd
+		zlibstatic zlibstaticd
 		PATH_SUFFIXES
 		lib
 	)
