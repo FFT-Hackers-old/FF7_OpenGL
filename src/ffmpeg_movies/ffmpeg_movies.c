@@ -379,12 +379,11 @@ void draw_yuv_frame(uint buffer_index, bool full_range)
 }
 
 /*Drop in replacement for the old video and audio decodings function*/
-int custom_decode(AVCodecContext *codec_ctx, AVFrame *frame, int *got_frame, AVPacket *packet)
+int custom_decode(AVCodecContext *codec_ctx, AVFrame *frame, int* got_frame, AVPacket *packet)
 {
 	int ret;
 
-	*got_frame = 0;
-
+    *got_frame = 0;
 	if (packet) {
 		ret = avcodec_send_packet(codec_ctx, packet);
 		if (ret < 0)
@@ -394,9 +393,7 @@ int custom_decode(AVCodecContext *codec_ctx, AVFrame *frame, int *got_frame, AVP
 	ret = avcodec_receive_frame(codec_ctx, frame);
 	if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
 		return ret;
-	if (ret >= 0)
-		*got_frame = 1;
-
+    *got_frame = 1;
 	return 0;
 }
 
@@ -404,7 +401,7 @@ int custom_decode(AVCodecContext *codec_ctx, AVFrame *frame, int *got_frame, AVP
 __declspec(dllexport) bool update_movie_sample()
 {
 	AVPacket packet;
-	bool frame_finished;
+	int frame_finished;
 	int ret;
 	time_t now;
 
@@ -492,7 +489,7 @@ __declspec(dllexport) bool update_movie_sample()
 				info("audio: DTS %f PTS %f (timebase %f) placed in sound buffer at real time %f (play %f write %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(acodec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)playcursor / (double)bytespersec, (double)write_pointer / (double)bytespersec);
 			}
 
-			while((used_bytes = custom_decode(acodec_ctx, (int16_t *)buffer, &size, packet_data, packet_size)) > 0)
+			while((used_bytes = custom_decode(acodec_ctx, movie_frame, &frame_finished, &packet)) > 0)
 			{
 				char *ptr1;
 				char *ptr2;

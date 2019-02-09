@@ -4,7 +4,7 @@ if (NOT FFMPEG_FOUND)
 	# avutil
 	find_library(
 		FFMPEG_AVUTIL_LIBRARY
-		avutil-56
+		avutil
 		PATH_SUFFIXES
 		lib
 	)
@@ -16,21 +16,12 @@ if (NOT FFMPEG_FOUND)
 		include
 	)
 
-	find_file(
-		FFMPEG_AVUTIL_DLL
-		avutil-56.dll
-		PATH_SUFFIXES
-		bin
-	)
-
-	add_library(FFMPEG::AVUtil SHARED IMPORTED)
+	add_library(FFMPEG::AVUtil STATIC IMPORTED)
 
 	set_target_properties(
 		FFMPEG::AVUtil
 		PROPERTIES
 		IMPORTED_LOCATION
-		"${FFMPEG_AVUTIL_DLL}"
-		IMPORTED_IMPLIB
 		"${FFMPEG_AVUTIL_LIBRARY}"
 		INTERFACE_INCLUDE_DIRECTORIES
 		"${FFMPEG_AVUTIL_INCLUDE_DIR}"
@@ -39,7 +30,7 @@ if (NOT FFMPEG_FOUND)
 	# swresample
 	find_library(
 		FFMPEG_SWRESAMPLE_LIBRARY
-		swresample-3
+		swresample
 		PATH_SUFFIXES
 		lib
 	)
@@ -51,21 +42,12 @@ if (NOT FFMPEG_FOUND)
 		include
 	)
 
-	find_file(
-		FFMPEG_SWRESAMPLE_DLL
-		swresample-3.dll
-		PATH_SUFFIXES
-		bin
-	)
-
-	add_library(FFMPEG::SWResample SHARED IMPORTED)
+	add_library(FFMPEG::SWResample STATIC IMPORTED)
 
 	set_target_properties(
 		FFMPEG::SWResample
 		PROPERTIES
 		IMPORTED_LOCATION
-		"${FFMPEG_SWRESAMPLE_DLL}"
-		IMPORTED_IMPLIB
 		"${FFMPEG_SWRESAMPLE_LIBRARY}"
 		INTERFACE_INCLUDE_DIRECTORIES
 		"${FFMPEG_SWRESAMPLE_INCLUDE_DIR}"
@@ -76,7 +58,7 @@ if (NOT FFMPEG_FOUND)
 	# avcodec
 	find_library(
 		FFMPEG_AVCODEC_LIBRARY
-		avcodec-58
+		avcodec
 		PATH_SUFFIXES
 		lib
 	)
@@ -88,21 +70,12 @@ if (NOT FFMPEG_FOUND)
 		include
 	)
 
-	find_file(
-		FFMPEG_AVCODEC_DLL
-		avcodec-58.dll
-		PATH_SUFFIXES
-		bin
-	)
-
-	add_library(FFMPEG::AVCodec SHARED IMPORTED)
+	add_library(FFMPEG::AVCodec STATIC IMPORTED)
 
 	set_target_properties(
 		FFMPEG::AVCodec
 		PROPERTIES
 		IMPORTED_LOCATION
-		"${FFMPEG_AVCODEC_DLL}"
-		IMPORTED_IMPLIB
 		"${FFMPEG_AVCODEC_LIBRARY}"
 		INTERFACE_INCLUDE_DIRECTORIES
 		"${FFMPEG_AVCODEC_INCLUDE_DIR}"
@@ -113,7 +86,7 @@ if (NOT FFMPEG_FOUND)
 	# avformat
 	find_library(
 		FFMPEG_AVFORMAT_LIBRARY
-		avformat-58
+		avformat
 		PATH_SUFFIXES
 		lib
 	)
@@ -125,21 +98,12 @@ if (NOT FFMPEG_FOUND)
 		include
 	)
 
-	find_file(
-		FFMPEG_AVFORMAT_DLL
-		avformat-58.dll
-		PATH_SUFFIXES
-		bin
-	)
-
-	add_library(FFMPEG::AVFormat SHARED IMPORTED)
+	add_library(FFMPEG::AVFormat STATIC IMPORTED)
 
 	set_target_properties(
 		FFMPEG::AVFormat
 		PROPERTIES
 		IMPORTED_LOCATION
-		"${FFMPEG_AVFORMAT_DLL}"
-		IMPORTED_IMPLIB
 		"${FFMPEG_AVFORMAT_LIBRARY}"
 		INTERFACE_INCLUDE_DIRECTORIES
 		"${FFMPEG_AVFORMAT_INCLUDE_DIR}"
@@ -150,7 +114,7 @@ if (NOT FFMPEG_FOUND)
 	# swscale
 	find_library(
 		FFMPEG_SWSCALE_LIBRARY
-		swscale-5
+		swscale
 		PATH_SUFFIXES
 		lib
 	)
@@ -162,21 +126,12 @@ if (NOT FFMPEG_FOUND)
 		include
 	)
 
-	find_file(
-		FFMPEG_SWSCALE_DLL
-		swscale-5.dll
-		PATH_SUFFIXES
-		bin
-	)
-
-	add_library(FFMPEG::SWScale SHARED IMPORTED)
+	add_library(FFMPEG::SWScale STATIC IMPORTED)
 
 	set_target_properties(
 		FFMPEG::SWScale
 		PROPERTIES
 		IMPORTED_LOCATION
-		"${FFMPEG_SWSCALE_DLL}"
-		IMPORTED_IMPLIB
 		"${FFMPEG_SWSCALE_LIBRARY}"
 		INTERFACE_INCLUDE_DIRECTORIES
 		"${FFMPEG_SWSCALE_INCLUDE_DIR}"
@@ -187,10 +142,10 @@ if (NOT FFMPEG_FOUND)
 	find_package_handle_standard_args(
 		FFMPEG
 		DEFAULT_MSG
-		FFMPEG_AVCODEC_LIBRARY		FFMPEG_AVCODEC_DLL
-		FFMPEG_AVFORMAT_LIBRARY		FFMPEG_AVFORMAT_DLL
-		FFMPEG_AVUTIL_LIBRARY		FFMPEG_AVUTIL_DLL
-		FFMPEG_SWSCALE_LIBRARY		FFMPEG_SWSCALE_DLL
-		FFMPEG_SWRESAMPLE_LIBRARY	FFMPEG_SWRESAMPLE_DLL
+		FFMPEG_AVCODEC_LIBRARY
+		FFMPEG_AVFORMAT_LIBRARY
+		FFMPEG_AVUTIL_LIBRARY
+		FFMPEG_SWSCALE_LIBRARY
+		FFMPEG_SWRESAMPLE_LIBRARY
 		)
 endif()
