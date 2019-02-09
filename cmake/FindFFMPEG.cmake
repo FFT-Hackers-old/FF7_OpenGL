@@ -1,80 +1,10 @@
 include(FindPackageHandleStandardArgs)
 
 if (NOT FFMPEG_FOUND)
-	# avcodec
-	find_file(
-		FFMPEG_AVCODEC_LIBRARY
-		libavcodec.dll.a
-		PATH_SUFFIXES
-		lib
-	)
-
-	find_path(
-		FFMPEG_AVCODEC_INCLUDE_DIR
-		libavcodec/avcodec.h
-		PATH_SUFFIXES
-		include
-	)
-
-	find_file(
-		FFMPEG_AVCODEC_DLL
-		avcodec-58.dll
-		PATH_SUFFIXES
-		bin
-	)
-
-	add_library(FFMPEG::AVCodec SHARED IMPORTED)
-
-	set_target_properties(
-		FFMPEG::AVCodec
-		PROPERTIES
-		IMPORTED_LOCATION
-		"${FFMPEG_AVCODEC_DLL}"
-		IMPORTED_IMPLIB
-		"${FFMPEG_AVCODEC_LIBRARY}"
-		INTERFACE_INCLUDE_DIRECTORIES
-		"${FFMPEG_AVCODEC_INCLUDE_DIR}"
-	)
-
-	# avformat
-	find_file(
-		FFMPEG_AVFORMAT_LIBRARY
-		libavformat.dll.a
-		PATH_SUFFIXES
-		lib
-	)
-
-	find_path(
-		FFMPEG_AVFORMAT_INCLUDE_DIR
-		libavformat/avformat.h
-		PATH_SUFFIXES
-		include
-	)
-
-	find_file(
-		FFMPEG_AVFORMAT_DLL
-		avformat-58.dll
-		PATH_SUFFIXES
-		bin
-	)
-
-	add_library(FFMPEG::AVFormat SHARED IMPORTED)
-
-	set_target_properties(
-		FFMPEG::AVFormat
-		PROPERTIES
-		IMPORTED_LOCATION
-		"${FFMPEG_AVFORMAT_DLL}"
-		IMPORTED_IMPLIB
-		"${FFMPEG_AVFORMAT_LIBRARY}"
-		INTERFACE_INCLUDE_DIRECTORIES
-		"${FFMPEG_AVFORMAT_INCLUDE_DIR}"
-	)
-
 	# avutil
-	find_file(
+	find_library(
 		FFMPEG_AVUTIL_LIBRARY
-		libavutil.dll.a
+		avutil-56
 		PATH_SUFFIXES
 		lib
 	)
@@ -106,10 +36,121 @@ if (NOT FFMPEG_FOUND)
 		"${FFMPEG_AVUTIL_INCLUDE_DIR}"
 	)
 
-	# swscale
+	# swresample
+	find_library(
+		FFMPEG_SWRESAMPLE_LIBRARY
+		swresample-3
+		PATH_SUFFIXES
+		lib
+	)
+
+	find_path(
+		FFMPEG_SWRESAMPLE_INCLUDE_DIR
+		libswresample/swresample.h
+		PATH_SUFFIXES
+		include
+	)
+
 	find_file(
+		FFMPEG_SWRESAMPLE_DLL
+		swresample-3.dll
+		PATH_SUFFIXES
+		bin
+	)
+
+	add_library(FFMPEG::SWResample SHARED IMPORTED)
+
+	set_target_properties(
+		FFMPEG::SWResample
+		PROPERTIES
+		IMPORTED_LOCATION
+		"${FFMPEG_SWRESAMPLE_DLL}"
+		IMPORTED_IMPLIB
+		"${FFMPEG_SWRESAMPLE_LIBRARY}"
+		INTERFACE_INCLUDE_DIRECTORIES
+		"${FFMPEG_SWRESAMPLE_INCLUDE_DIR}"
+		INTERFACE_LINK_LIBRARIES
+		FFMPEG::AVUtil
+	)
+
+	# avcodec
+	find_library(
+		FFMPEG_AVCODEC_LIBRARY
+		avcodec-58
+		PATH_SUFFIXES
+		lib
+	)
+
+	find_path(
+		FFMPEG_AVCODEC_INCLUDE_DIR
+		libavcodec/avcodec.h
+		PATH_SUFFIXES
+		include
+	)
+
+	find_file(
+		FFMPEG_AVCODEC_DLL
+		avcodec-58.dll
+		PATH_SUFFIXES
+		bin
+	)
+
+	add_library(FFMPEG::AVCodec SHARED IMPORTED)
+
+	set_target_properties(
+		FFMPEG::AVCodec
+		PROPERTIES
+		IMPORTED_LOCATION
+		"${FFMPEG_AVCODEC_DLL}"
+		IMPORTED_IMPLIB
+		"${FFMPEG_AVCODEC_LIBRARY}"
+		INTERFACE_INCLUDE_DIRECTORIES
+		"${FFMPEG_AVCODEC_INCLUDE_DIR}"
+		INTERFACE_LINK_LIBRARIES
+		"FFMPEG::AVUtil;FFMPEG::SWResample"
+	)
+
+	# avformat
+	find_library(
+		FFMPEG_AVFORMAT_LIBRARY
+		avformat-58
+		PATH_SUFFIXES
+		lib
+	)
+
+	find_path(
+		FFMPEG_AVFORMAT_INCLUDE_DIR
+		libavformat/avformat.h
+		PATH_SUFFIXES
+		include
+	)
+
+	find_file(
+		FFMPEG_AVFORMAT_DLL
+		avformat-58.dll
+		PATH_SUFFIXES
+		bin
+	)
+
+	add_library(FFMPEG::AVFormat SHARED IMPORTED)
+
+	set_target_properties(
+		FFMPEG::AVFormat
+		PROPERTIES
+		IMPORTED_LOCATION
+		"${FFMPEG_AVFORMAT_DLL}"
+		IMPORTED_IMPLIB
+		"${FFMPEG_AVFORMAT_LIBRARY}"
+		INTERFACE_INCLUDE_DIRECTORIES
+		"${FFMPEG_AVFORMAT_INCLUDE_DIR}"
+		INTERFACE_LINK_LIBRARIES
+		"FFMPEG::AVUtil;FFMPEG::AVCodec"
+	)
+
+	# swscale
+	find_library(
 		FFMPEG_SWSCALE_LIBRARY
-		libswscale.dll.a
+		swscale-5
 		PATH_SUFFIXES
 		lib
 	)
@@ -139,7 +180,17 @@ if (NOT FFMPEG_FOUND)
 		"${FFMPEG_SWSCALE_LIBRARY}"
 		INTERFACE_INCLUDE_DIRECTORIES
 		"${FFMPEG_SWSCALE_INCLUDE_DIR}"
+		INTERFACE_LINK_LIBRARIES
+		FFMPEG::AVUtil
 	)
 
-	find_package_handle_standard_args(FFMPEG DEFAULT_MSG FFMPEG_AVCODEC_LIBRARY FFMPEG_AVFORMAT_LIBRARY FFMPEG_AVUTIL_LIBRARY FFMPEG_SWSCALE_LIBRARY)
+	find_package_handle_standard_args(
+		FFMPEG
+		DEFAULT_MSG
+		FFMPEG_AVCODEC_LIBRARY		FFMPEG_AVCODEC_DLL
+		FFMPEG_AVFORMAT_LIBRARY		FFMPEG_AVFORMAT_DLL
+		FFMPEG_AVUTIL_LIBRARY		FFMPEG_AVUTIL_DLL
+		FFMPEG_SWSCALE_LIBRARY		FFMPEG_SWSCALE_DLL
+		FFMPEG_SWRESAMPLE_LIBRARY	FFMPEG_SWRESAMPLE_DLL
+		)
 endif()
