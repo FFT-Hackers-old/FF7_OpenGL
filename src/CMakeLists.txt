@@ -31,3 +31,4 @@ target_link_libraries(ffmpeg_movies
 target_compile_definitions(ffmpeg_movies PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
 
 install(TARGETS ffmpeg_movies RUNTIME DESTINATION bin)
+install(FILES "${FFMPEG_AVUTIL_DLL}" "${FFMPEG_SWRESAMPLE_DLL}" "${FFMPEG_AVCODEC_DLL}" "${FFMPEG_AVFORMAT_DLL}" "${FFMPEG_SWSCALE_DLL}" DESTINATION bin)

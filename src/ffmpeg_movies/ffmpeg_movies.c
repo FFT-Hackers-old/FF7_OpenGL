@@ -393,7 +393,8 @@ int custom_decode(AVCodecContext *codec_ctx, AVFrame *frame, int* got_frame, AVP
 	ret = avcodec_receive_frame(codec_ctx, frame);
 	if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
 		return ret;
-    *got_frame = 1;
+    if (ret >= 0)
+        *got_frame = 1;
 	return 0;
 }
 
