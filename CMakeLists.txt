@@ -35,3 +35,4 @@ endif()
 
 project(FF7_OpenGL)
 add_subdirectory(src)
+
