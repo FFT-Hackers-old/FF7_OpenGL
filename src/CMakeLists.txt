@@ -3,6 +3,9 @@ find_package(ZLib REQUIRED)
 find_package(PNG REQUIRED)
 find_package(FFMPEG REQUIRED)
 
+string(TOUPPER ${CMAKE_BUILD_TYPE} RELEASE_TYPE)
+add_compile_definitions(${RELEASE_TYPE})
+
 add_library(ff7_opengl SHARED cfg.h cfg.c common.h common.c common_imports.h compile_cfg.h
 	crashdump.c crashdump.h ctx.h ctx.c externals_102_de.h externals_102_fr.h externals_102_sp.h externals_102_us.h
 	fake_dd.h fake_dd.c ff7.h ff7_data.h ff7_opengl.c ff8.h ff8_data.h ff8_opengl.c gl.h globals.h log.c log.h
