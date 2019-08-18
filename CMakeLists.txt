@@ -21,6 +21,7 @@ if (SUPERBUILD)
 		zlib
 		libpng
 		ffmpeg
+		vgmstream
 	)
 	ExternalProject_Add_Step(
 		ff7_opengl
