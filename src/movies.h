@@ -38,7 +38,7 @@ struct movie_plugin
 };
 
 void movie_init();
-bool ff7_prepare_movie(char *, uint, struct dddevice **, uint);
+bool ff7_prepare_movie();
 void ff7_release_movie_objects();
 bool ff7_start_movie();
 bool ff7_update_movie_sample(LPDIRECTDRAWSURFACE);

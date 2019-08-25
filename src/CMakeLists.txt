@@ -7,7 +7,12 @@ find_package(VGMSTREAM REQUIRED)
 string(TOUPPER ${CMAKE_BUILD_TYPE} RELEASE_TYPE)
 add_compile_definitions(${RELEASE_TYPE})
 
+# Include all the source code files but...
 file(GLOB source_files "*.h" "*.c")
+
+# ...FF8 source code
+list(REMOVE_ITEM source_files "ff8_data.h" "ff8.h" "ff8_opengl.c")
+
 add_library(ff7_opengl SHARED ${source_files})
 add_subdirectory(3rdparty)
 add_subdirectory(ff7)
@@ -16,7 +21,9 @@ add_subdirectory(gl)
 target_include_directories(ff7_opengl PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(ff7_opengl GLEW::GLEW ZLib::ZLib PNG::PNG)
 target_compile_definitions(ff7_opengl PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
-install(TARGETS ff7_opengl RUNTIME DESTINATION bin)
+target_compile_options(ff7_opengl PRIVATE -w)
+set_target_properties(ff7_opengl PROPERTIES PREFIX "")
+set_target_properties(ff7_opengl PROPERTIES SUFFIX ".fgd")
 
 add_library(ffmpeg_movies SHARED)
 target_include_directories(ffmpeg_movies PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
@@ -30,6 +37,9 @@ target_link_libraries(ffmpeg_movies
 	FFMPEG::SWScale
 )
 target_compile_definitions(ffmpeg_movies PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
+target_compile_options(ffmpeg_movies PRIVATE -w)
+set_target_properties(ffmpeg_movies PROPERTIES PREFIX "")
+set_target_properties(ffmpeg_movies PROPERTIES SUFFIX ".fgp")
 
 add_library(vgmstream_music SHARED)
 target_include_directories(vgmstream_music PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
@@ -43,13 +53,20 @@ target_link_libraries(vgmstream_music
 	FFMPEG::SWScale
 )
 target_compile_definitions(vgmstream_music PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
+target_compile_options(vgmstream_music PRIVATE -w)
+set_target_properties(vgmstream_music PROPERTIES PREFIX "")
+set_target_properties(vgmstream_music PROPERTIES SUFFIX ".fgp")
 
 add_library(ff7music SHARED)
 target_include_directories(ff7music PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
 add_subdirectory(ff7music)
 target_compile_definitions(ff7music PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
+target_compile_options(ff7music PRIVATE -w)
+set_target_properties(ff7music PROPERTIES PREFIX "")
+set_target_properties(ff7music PROPERTIES SUFFIX ".fgp")
 
-install(TARGETS ffmpeg_movies RUNTIME DESTINATION bin)
-install(TARGETS vgmstream_music RUNTIME DESTINATION bin)
-install(TARGETS ff7music RUNTIME DESTINATION bin)
+install(TARGETS ff7_opengl RUNTIME DESTINATION bin)
+install(TARGETS ffmpeg_movies RUNTIME DESTINATION bin/plugins)
+install(TARGETS vgmstream_music RUNTIME DESTINATION bin/plugins)
+install(TARGETS ff7music RUNTIME DESTINATION bin/plugins)
 install(FILES "${FFMPEG_AVUTIL_DLL}" "${FFMPEG_SWRESAMPLE_DLL}" "${FFMPEG_AVCODEC_DLL}" "${FFMPEG_AVFORMAT_DLL}" "${FFMPEG_SWSCALE_DLL}" DESTINATION bin)
