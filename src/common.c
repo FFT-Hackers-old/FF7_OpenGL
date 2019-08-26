@@ -265,7 +265,7 @@ struct game_mode *getmode_cached()
 // called by the game before rendering starts, after the driver object has been
 // created, we use this opportunity to initialize our default OpenGL render
 // state
-bool common_init(struct game_obj *game_object)
+gfx_init common_init(struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: init\n");
 
@@ -304,7 +304,7 @@ bool common_init(struct game_obj *game_object)
 
 // called by the game just before it exits, we need to make sure the game
 // doesn't crash after we're gone
-void common_cleanup(struct game_obj *game_object)
+gfx_cleanup common_cleanup(struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: cleanup\n");
 
@@ -316,7 +316,7 @@ void common_cleanup(struct game_obj *game_object)
 }
 
 // unused and unnecessary
-bool common_lock(uint surface)
+gfx_lock common_lock(uint surface)
 {
 	if(trace_all) trace("dll_gfx: lock %i\n", surface);
 
@@ -324,7 +324,7 @@ bool common_lock(uint surface)
 }
 
 // unused and unnecessary
-bool common_unlock(uint surface)
+gfx_unlock common_unlock(uint surface)
 {
 	if(trace_all) trace("dll_gfx: unlock %i\n", surface);
 
@@ -333,7 +333,7 @@ bool common_unlock(uint surface)
 
 // called by the game at the end of each frame to swap the front and back
 // buffers
-void common_flip(struct game_obj *game_object)
+gfx_flip common_flip(struct game_obj *game_object)
 {
 	VOBJ(game_obj, game_object, game_object);
 	static time_t last_gametime;
@@ -482,7 +482,7 @@ void common_flip(struct game_obj *game_object)
 
 // called by the game to clear an aspect of the back buffer, mostly called from
 // clear_all below
-void common_clear(bool clear_color, bool clear_depth, bool unknown, struct game_obj *game_object)
+gfx_clear common_clear(bool clear_color, bool clear_depth, bool unknown, struct game_obj *game_object)
 {
 	uint mode = getmode()->driver_mode;
 	GLbitfield mask = 0;
@@ -509,7 +509,7 @@ void common_clear(bool clear_color, bool clear_depth, bool unknown, struct game_
 }
 
 // called by the game to clear the entire back buffer
-void common_clear_all(struct game_obj *game_object)
+gfx_clear_all common_clear_all(struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: clear_all\n");
 
@@ -518,7 +518,7 @@ void common_clear_all(struct game_obj *game_object)
 
 // called by the game to setup a viewport inside the game window, allowing it
 // to clip drawing to the requested area
-void common_setviewport(uint _x, uint _y, uint _w, uint _h, struct game_obj *game_object)
+gfx_setviewport common_setviewport(uint _x, uint _y, uint _w, uint _h, struct game_obj *game_object)
 {
 	uint mode = getmode()->driver_mode;
 
@@ -543,7 +543,7 @@ void common_setviewport(uint _x, uint _y, uint _w, uint _h, struct game_obj *gam
 
 // called by the game to set the background color which the back buffer will be
 // cleared to
-void common_setbg(struct bgra_color *color, struct game_obj *game_object)
+gfx_setbg common_setbg(struct bgra_color *color, struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: setbg\n");
 
@@ -552,7 +552,7 @@ void common_setbg(struct bgra_color *color, struct game_obj *game_object)
 
 // called by the game to initialize a polygon_set structure
 // we don't really need to do anything special here
-bool common_prepare_polygon_set(struct polygon_set *polygon_set)
+gfx_prepare_polygon_set common_prepare_polygon_set(struct polygon_set *polygon_set)
 {
 	VOBJ(polygon_set, polygon_set, polygon_set);
 
@@ -562,14 +562,14 @@ bool common_prepare_polygon_set(struct polygon_set *polygon_set)
 }
 
 // called by the game to load a group from a .p file into a renderable format
-bool common_load_group(uint group_num, struct matrix_set *matrix_set, struct p_hundred *hundred_data, struct p_group *group_data, struct polygon_data *polygon_data, struct polygon_set *polygon_set, struct game_obj *game_object)
+gfx_load_group common_load_group(uint group_num, struct matrix_set *matrix_set, struct p_hundred *hundred_data, struct p_group *group_data, struct polygon_data *polygon_data, struct polygon_set *polygon_set, struct game_obj *game_object)
 {
 	if(!ff8) return ff7gl_load_group(group_num, matrix_set, hundred_data, group_data, polygon_data, (struct ff7_polygon_set *)polygon_set, (struct ff7_game_obj *)game_object);
 	else return common_externals.generic_load_group(group_num, matrix_set, hundred_data, group_data, polygon_data, polygon_set, game_object);
 }
 
 // called by the game to update one of the matrices in a matrix_set structure
-void common_setmatrix(uint unknown, struct matrix *matrix, struct matrix_set *matrix_set, struct game_obj *game_object)
+gfx_setmatrix common_setmatrix(uint unknown, struct matrix *matrix, struct matrix_set *matrix_set, struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: setmatrix\n");
 
@@ -593,7 +593,7 @@ void common_setmatrix(uint unknown, struct matrix *matrix, struct matrix_set *ma
 }
 
 // called by the game to unload a texture
-void common_unload_texture(struct texture_set *texture_set)
+gfx_unload_texture common_unload_texture(struct texture_set *texture_set)
 {
 	uint i;
 	VOBJ(texture_set, texture_set, texture_set);
@@ -816,7 +816,7 @@ void convert_image_data(unsigned char *image_data, uint *converted_image_data, u
 
 // called by the game to load a texture
 // can be called under a wide variety of circumstances, we must figure out what the game wants
-struct texture_set *common_load_texture(struct texture_set *_texture_set, struct tex_header *_tex_header, struct texture_format *texture_format)
+gfx_load_texture common_load_texture(struct texture_set *_texture_set, struct tex_header *_tex_header, struct texture_format *texture_format)
 {
 	VOBJ(game_obj, game_object, common_externals.get_game_object());
 	VOBJ(texture_set, texture_set, _texture_set);
@@ -978,7 +978,7 @@ struct texture_set *common_load_texture(struct texture_set *_texture_set, struct
 }
 
 // called by the game to indicate when a texture has switched to using another palette
-bool common_palette_changed(uint unknown1, uint unknown2, uint unknown3, struct palette *palette, struct texture_set *texture_set)
+gfx_palette_changed common_palette_changed(uint unknown1, uint unknown2, uint unknown3, struct palette *palette, struct texture_set *texture_set)
 {
 	VOBJ(texture_set, texture_set, texture_set);
 
@@ -1000,7 +1000,7 @@ bool common_palette_changed(uint unknown1, uint unknown2, uint unknown3, struct 
 // called by the game to write new color data to a palette
 // sometimes called just to indicate that the palette has already been changed
 // return value?
-bool common_write_palette(uint source_offset, uint size, void *source, uint dest_offset, struct palette *palette, struct texture_set *texture_set)
+gfx_write_palette common_write_palette(uint source_offset, uint size, void *source, uint dest_offset, struct palette *palette, struct texture_set *texture_set)
 {
 	uint palette_index;
 	uint palettes;
@@ -1103,7 +1103,7 @@ struct blend_mode blend_modes[5] = {      // PSX blend mode:
 
 // called by the game to retrieve blend mode parameters
 // only z-sort and vertex alpha are really relevant to us
-struct blend_mode *common_blendmode(uint unknown, struct game_obj *game_object)
+gfx_blendmode common_blendmode(uint unknown, struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: blendmode %i\n", unknown);
 
@@ -1239,7 +1239,7 @@ void internal_set_renderstate(uint state, uint option, struct game_obj *game_obj
 }
 
 // called by the game to set a simple render state
-void common_field_64(uint unknown1, uint unknown2, struct game_obj *game_object)
+gfx_field_64 common_field_64(uint unknown1, uint unknown2, struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: field_64 %i %i\n", unknown1, unknown2);
 
@@ -1247,7 +1247,7 @@ void common_field_64(uint unknown1, uint unknown2, struct game_obj *game_object)
 }
 
 // called by the game to apply a set of render states
-void common_setrenderstate(struct p_hundred *hundred_data, struct game_obj *game_object)
+gfx_setrenderstate common_setrenderstate(struct p_hundred *hundred_data, struct game_obj *game_object)
 {
 	uint features;
 	uint options;
@@ -1321,7 +1321,7 @@ void common_setrenderstate(struct p_hundred *hundred_data, struct game_obj *game
 
 // called by the game to apply a predetermined set of render states
 // one for each blend mode? not sure what this is used for exactly
-void common_field_74(uint unknown, struct game_obj *game_object)
+gfx_field_74 common_field_74(uint unknown, struct game_obj *game_object)
 {
 	VOBJ(game_obj, game_object, game_object);
 
@@ -1335,7 +1335,7 @@ void common_field_74(uint unknown, struct game_obj *game_object)
 // called by the game to render a polygon set
 // in FF7 this is where most of the 3D rendering happens
 // in FF8 this function doesn't do any rendering at all
-void common_field_78(struct polygon_set *polygon_set, struct game_obj *game_object)
+gfx_field_78 common_field_78(struct polygon_set *polygon_set, struct game_obj *game_object)
 {
 	if(!ff8) ff7gl_field_78((struct ff7_polygon_set *)polygon_set, (struct ff7_game_obj *)game_object);
 	else ff8gl_field_78((struct ff8_polygon_set *)polygon_set, (struct ff8_game_obj *)game_object);
@@ -1344,7 +1344,7 @@ void common_field_78(struct polygon_set *polygon_set, struct game_obj *game_obje
 // called by the game to render an instance that has been deferred by the above
 // function, this is a feature of the original game, not to be confused with
 // our own deferred rendering!
-void common_draw_deferred(struct struc_77 *struc_77, struct game_obj *game_object)
+gfx_draw_deferred common_draw_deferred(struct struc_77 *struc_77, struct game_obj *game_object)
 {
 	VOBJ(polygon_set, polygon_set, struc_77->polygon_set);
 	struct p_hundred *hundred_data = struc_77->hundred_data;
@@ -1371,7 +1371,7 @@ void common_draw_deferred(struct struc_77 *struc_77, struct game_obj *game_objec
 
 // called by the game to render a graphics object, basically a wrapper for
 // field_78
-void common_field_80(struct graphics_object *graphics_object, struct game_obj *game_object)
+gfx_field_80 common_field_80(struct graphics_object *graphics_object, struct game_obj *game_object)
 {
 	VOBJ(graphics_object, graphics_object, graphics_object);
 
@@ -1384,7 +1384,7 @@ void common_field_80(struct graphics_object *graphics_object, struct game_obj *g
 
 // called by the game to draw some predefined polygon sets, no idea what this
 // is really used for
-void common_field_84(uint unknown, struct game_obj *game_object)
+gfx_field_84 common_field_84(uint unknown, struct game_obj *game_object)
 {
 	VOBJ(game_obj, game_object, game_object);
 	VOBJ(polygon_set, polygon_set_2EC, VREF(game_object, polygon_set_2EC));
@@ -1414,7 +1414,7 @@ void common_field_84(uint unknown, struct game_obj *game_object)
 // called by the game to setup a new scene for rendering
 // scenes are not stacked in FF7
 // FF8 relies on the ability to stack scenes, saving and later reverting to a previous render state
-bool common_begin_scene(uint unknown, struct game_obj *game_object)
+gfx_begin_scene common_begin_scene(uint unknown, struct game_obj *game_object)
 {
 	VOBJ(game_obj, game_object, game_object);
 
@@ -1432,7 +1432,7 @@ bool common_begin_scene(uint unknown, struct game_obj *game_object)
 
 // called by the game to end a scene previously setup by the above function
 // render state will be restored to what it was before the scene was created
-void common_end_scene(struct game_obj *game_object)
+gfx_end_scene common_end_scene(struct game_obj *game_object)
 {
 	VOBJ(game_obj, game_object, game_object);
 
@@ -1445,7 +1445,7 @@ void common_end_scene(struct game_obj *game_object)
 }
 
 // noop
-void common_field_90(uint unknown)
+gfx_field_90 common_field_90(uint unknown)
 {
 	glitch_once("dll_gfx: field_90 (not implemented)\n");
 }
@@ -1509,7 +1509,7 @@ void generic_draw_paletted(struct polygon_set *polygon_set, struct indexed_verti
 }
 
 // called by the game to set the render state for a set of 2D triangles
-void common_setrenderstate_2D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
+gfx_polysetrenderstate common_setrenderstate_2D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
 {
 	VOBJ(polygon_set, polygon_set, polygon_set);
 
@@ -1521,7 +1521,7 @@ void common_setrenderstate_2D(struct polygon_set *polygon_set, struct indexed_ve
 }
 
 // called by the game to draw a set of 2D triangles without palette data
-void common_draw_2D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
+gfx_draw_vertices common_draw_2D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: draw_2D\n");
 
@@ -1529,7 +1529,7 @@ void common_draw_2D(struct polygon_set *polygon_set, struct indexed_vertices *iv
 }
 
 // called by the game to draw a set of 2D triangles with palette data
-void common_draw_paletted2D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
+gfx_draw_vertices common_draw_paletted2D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: draw_paletted2D\n");
 
@@ -1537,7 +1537,7 @@ void common_draw_paletted2D(struct polygon_set *polygon_set, struct indexed_vert
 }
 
 // called by the game to set the render state for a set of 3D triangles
-void common_setrenderstate_3D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
+gfx_polysetrenderstate common_setrenderstate_3D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
 {
 	VOBJ(polygon_set, polygon_set, polygon_set);
 	VOBJ(indexed_vertices, iv, iv);
@@ -1554,7 +1554,7 @@ void common_setrenderstate_3D(struct polygon_set *polygon_set, struct indexed_ve
 }
 
 // called by the game to draw a set of 3D triangles without palette data
-void common_draw_3D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
+gfx_draw_vertices common_draw_3D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: draw_3D\n");
 
@@ -1562,7 +1562,7 @@ void common_draw_3D(struct polygon_set *polygon_set, struct indexed_vertices *iv
 }
 
 // called by the game to draw a set of 3D triangles with palette data
-void common_draw_paletted3D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
+gfx_draw_vertices common_draw_paletted3D(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
 {
 	if(trace_all) trace("dll_gfx: draw_paletted3D\n");
 
@@ -1570,7 +1570,7 @@ void common_draw_paletted3D(struct polygon_set *polygon_set, struct indexed_vert
 }
 
 // called by the game to draw a set of lines
-void common_draw_lines(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
+gfx_draw_vertices common_draw_lines(struct polygon_set *polygon_set, struct indexed_vertices *iv, struct game_obj *game_object)
 {
 	VOBJ(polygon_set, polygon_set, polygon_set);
 	VOBJ(indexed_vertices, iv, iv);
@@ -1581,7 +1581,7 @@ void common_draw_lines(struct polygon_set *polygon_set, struct indexed_vertices 
 }
 
 // noop
-void common_field_EC(struct game_obj *game_object)
+gfx_field_EC common_field_EC(struct game_obj *game_object)
 {
 	glitch_once("dll_gfx: field_EC (not implemented)\n");
 }

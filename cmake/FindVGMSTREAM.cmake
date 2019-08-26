@@ -5,7 +5,7 @@ if (NOT VGMSTREAM_FOUND)
 
 	find_library(
 		VGMSTREAM_LIBRARY
-		libvgmstream
+		vgmstream
 		PATH_SUFFIXES
 		lib
 	)
@@ -14,7 +14,7 @@ if (NOT VGMSTREAM_FOUND)
 		VGMSTREAM_INCLUDE_DIR
 		vgmstream.h
 		PATH_SUFFIXES
-		include
+		include/libvgmstream
 	)
 
 	add_library(VGMSTREAM::VGMSTREAM STATIC IMPORTED)
@@ -27,7 +27,7 @@ if (NOT VGMSTREAM_FOUND)
 		INTERFACE_INCLUDE_DIRECTORIES
 		"${VGMSTREAM_INCLUDE_DIR}"
 		INTERFACE_LINK_LIBRARIES
-        FFMPEG::SWResample
+      FFMPEG::SWResample
 	    FFMPEG::AVCodec
 	    FFMPEG::AVFormat
 	)
