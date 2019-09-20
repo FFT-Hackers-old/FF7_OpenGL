@@ -1,4 +1,13 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
+cmake_policy(SET CMP0091 NEW)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug")
+else()
+	set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+endif()
+
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:LIBCMTD /NODEFAULTLIB:MSVCRT /NODEFAULTLIB:MSVCRTD /FORCE:MULTIPLE /MANIFEST:NO")
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 option(SUPERBUILD "Build the project using a superbuild" ON)

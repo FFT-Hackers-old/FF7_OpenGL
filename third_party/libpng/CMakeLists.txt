@@ -2,9 +2,10 @@ include(ExternalProject)
 
 ExternalProject_Add(
     libpng
-    URL                 "${CMAKE_SOURCE_DIR}/third_party/libpng/libpng-1.6.37.tar.gz"
+    URL                 "https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz"
     URL_HASH            "SHA256=daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4"
 	INSTALL_DIR			"${CMAKE_BINARY_DIR}/vendor"
+	PATCH_COMMAND       "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third_party/libpng/CMakeLists.txt.in" "<SOURCE_DIR>/CMakeLists.txt"
 	CMAKE_ARGS
 		"-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
 		"-DCMAKE_PREFIX_PATH=<INSTALL_DIR>"
