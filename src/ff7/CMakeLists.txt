@@ -1,10 +1,3 @@
-target_sources(ff7_opengl
-	PRIVATE
-		${CMAKE_CURRENT_LIST_DIR}/defs.h
-		${CMAKE_CURRENT_LIST_DIR}/battle.c
-		${CMAKE_CURRENT_LIST_DIR}/field.c
-		${CMAKE_CURRENT_LIST_DIR}/file.c
-		${CMAKE_CURRENT_LIST_DIR}/graphics.c
-		${CMAKE_CURRENT_LIST_DIR}/loaders.c
-		${CMAKE_CURRENT_LIST_DIR}/misc.c
-)
+file(GLOB ff7_source_files "*.h" "*.c")
+
+target_sources(ff7_opengl PRIVATE ${ff7_source_files})

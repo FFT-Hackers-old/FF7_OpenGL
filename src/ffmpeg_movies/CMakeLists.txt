@@ -1,5 +1,3 @@
-target_sources(ffmpeg_movies
-	PRIVATE
-		${CMAKE_CURRENT_LIST_DIR}/ffmpeg_movies.c
-		${CMAKE_CURRENT_LIST_DIR}/types.h
-)
+file(GLOB ffmpeg_movies_source_files "*.h" "*.c")
+
+target_sources(ffmpeg_movies PRIVATE ${ffmpeg_movies_source_files})
