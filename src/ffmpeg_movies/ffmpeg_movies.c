@@ -40,6 +40,7 @@ int videostream;
 int audiostream;
 
 bool use_bgra_texture;
+bool bShouldConvertAudio = false;
 
 struct video_frame
 {
@@ -258,10 +259,10 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 	if(audiostream != -1)
 	{
-		if(acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) error("unsupported sample format, expect garbled audio output\n");
+		if (acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) { bShouldConvertAudio = true; };
 
 		sound_format.cbSize = sizeof(sound_format);
-		sound_format.wBitsPerSample = acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 8 : 16;
+		sound_format.wBitsPerSample = bShouldConvertAudio ? 16 : acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 8 : 16;
 		sound_format.nChannels = acodec_ctx->channels;
 		sound_format.nSamplesPerSec = acodec_ctx->sample_rate;
 		sound_format.nBlockAlign = sound_format.nChannels * sound_format.wBitsPerSample / 8;
@@ -484,7 +485,7 @@ __declspec(dllexport) bool update_movie_sample()
 			uint packet_size = packet.size;
 			uint playcursor;
 			uint writecursor;
-			uint bytespersec = (acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2) * acodec_ctx->channels * acodec_ctx->sample_rate;
+			uint bytespersec = (bShouldConvertAudio ? 1 : acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2) * acodec_ctx->channels * acodec_ctx->sample_rate;
 
 			QueryPerformanceCounter((LARGE_INTEGER *)&now);
 
