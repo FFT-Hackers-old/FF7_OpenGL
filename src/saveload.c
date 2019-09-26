@@ -32,7 +32,6 @@
 #include "cfg.h"
 #include "compile_cfg.h"
 #include "png.h"
-#include "pngcustom.h"
 #include "ctx.h"
 #include "macro.h"
 
@@ -49,7 +48,7 @@ void make_path(char *name)
 		strncpy(tmp, name, next - name);
 		tmp[next - name] = 0;
 		
-		_mkdir(tmp);
+		mkdir(tmp);
 	}
 }
 

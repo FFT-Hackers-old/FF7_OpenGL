@@ -20,14 +20,12 @@
  * png.c - load/save routines for PNG images
  */
 
-#include <setjmp.h>
 #include <stdio.h>
+#include <libpng16/png.h>
 #include <zlib.h>
-#include <png.h>
 #include <direct.h>
 
 #include "types.h"
-#include "pngcustom.h"
 #include "log.h"
 #include "globals.h"
 #include "gl.h"

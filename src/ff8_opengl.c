@@ -169,7 +169,7 @@ struct ff8_tex_header *ff8_load_tex_file(struct file_context *file_context, char
 	{
 		if(ret->file.pc_name[i] == '.')
 		{
-			if(!_stricmp(&ret->file.pc_name[i], ".TEX")) ret->file.pc_name[i] = 0;
+			if(!stricmp(&ret->file.pc_name[i], ".TEX")) ret->file.pc_name[i] = 0;
 			else ret->file.pc_name[i] = '_';
 		}
 	}
@@ -277,8 +277,8 @@ void ff8_read_basedir()
 	uint basedir_length = sizeof(basedir);
 	HKEY ff8_regkey;
 
-	RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT("SOFTWARE\\Square Soft, Inc\\Final Fantasy VIII\\1.00"), 0, KEY_QUERY_VALUE, &ff8_regkey);
-	RegQueryValueEx(ff8_regkey, TEXT("AppPath"), 0, 0, basedir, &basedir_length);
+	RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Square Soft, Inc\\Final Fantasy VIII\\1.00", 0, KEY_QUERY_VALUE, &ff8_regkey);
+	RegQueryValueEx(ff8_regkey, "AppPath", 0, 0, basedir, &basedir_length);
 	basedir[sizeof(basedir) - 1] = 0;
 }
 
