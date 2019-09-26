@@ -43,13 +43,7 @@ add_library(vgmstream_music SHARED)
 target_include_directories(vgmstream_music PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
 add_subdirectory(vgmstream_music)
 target_link_libraries(vgmstream_music
-	bcrypt
     VGMSTREAM::VGMSTREAM
-	FFMPEG::AVUtil
-	FFMPEG::SWResample
-	FFMPEG::AVCodec
-	FFMPEG::AVFormat
-	FFMPEG::SWScale
 )
 target_compile_definitions(vgmstream_music PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
 target_compile_options(vgmstream_music PRIVATE -w)
