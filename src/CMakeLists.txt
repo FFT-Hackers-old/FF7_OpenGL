@@ -4,7 +4,11 @@ find_package(PNG REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(VGMSTREAM REQUIRED)
 
-string(TOUPPER ${CMAKE_BUILD_TYPE} RELEASE_TYPE)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+	set(RELEASE_TYPE "DEBUG")
+else()
+	set(RELEASE_TYPE "RELEASE")
+endif()
 add_compile_definitions(${RELEASE_TYPE})
 
 # Include all the source code files
