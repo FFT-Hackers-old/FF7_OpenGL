@@ -108,7 +108,7 @@ __declspec(dllexport) void movie_init(void *plugin_trace, void *plugin_info, voi
 	movie_sync_debug = plugin_movie_sync_debug;
 
 	info("FFMpeg movie player plugin loaded\n");
-	info("FFMpeg version SVN-r25886, Copyright (c) 2000-2010 Fabrice Bellard, et al.\n");
+	info("FFMpeg version 4.2.1, Copyright (c) 2000-2019 Fabrice Bellard, et al.\n");
 
 	glewInit();
 
