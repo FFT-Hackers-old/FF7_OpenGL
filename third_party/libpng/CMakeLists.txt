@@ -2,8 +2,8 @@ include(ExternalProject)
 
 ExternalProject_Add(
     libpng
-    URL                 "https://download.sourceforge.net/libpng/libpng-1.6.37.tar.gz"
-    URL_HASH            "SHA256=daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4"
+    URL                 "https://github.com/glennrp/libpng/archive/v1.6.37.tar.gz"
+    URL_HASH            "SHA256=ca74a0dace179a8422187671aee97dd3892b53e168627145271cad5b5ac81307"
 	INSTALL_DIR			"${CMAKE_BINARY_DIR}/vendor"
 	PATCH_COMMAND       "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third_party/libpng/CMakeLists.txt.in" "<SOURCE_DIR>/CMakeLists.txt"
 	CMAKE_ARGS
