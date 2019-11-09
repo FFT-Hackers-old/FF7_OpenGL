@@ -61,6 +61,9 @@ bool write_png(char *filename, uint width, uint height, char *data)
 		fclose(f);
 		return false;
 	}
+
+	// Relax LibPNG sRGB profile checks
+	png_set_option(png_ptr, PNG_SKIP_sRGB_CHECK_PROFILE, PNG_OPTION_ON);
 	
 	info_ptr = png_create_info_struct(png_ptr);
 	
@@ -122,6 +125,9 @@ uint *read_png(char *filename, uint *_width, uint *_height)
 		fclose(f);
 		return 0;
 	}
+
+	// Relax LibPNG sRGB profile checks
+	png_set_option(png_ptr, PNG_SKIP_sRGB_CHECK_PROFILE, PNG_OPTION_ON);
 
 	info_ptr = png_create_info_struct(png_ptr);
 
