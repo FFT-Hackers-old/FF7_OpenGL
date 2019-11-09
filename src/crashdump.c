@@ -92,29 +92,32 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 
 	// save crash dump to game directory
 	sprintf(filename, "%s/%s", basedir, crash_dmp);
-	dbghelp = LoadLibrary("dbghelp.dll");
-	if (dbghelp != NULL)
-	{
-		typedef BOOL (WINAPI *MiniDumpWriteDump_t)(HANDLE, DWORD, HANDLE,
-				MINIDUMP_TYPE,
-				CONST PMINIDUMP_EXCEPTION_INFORMATION,
-				CONST PMINIDUMP_USER_STREAM_INFORMATION,
-				CONST PMINIDUMP_CALLBACK_INFORMATION);
-		MiniDumpWriteDump_t funcMiniDumpWriteDump = (MiniDumpWriteDump_t)GetProcAddress(dbghelp, "MiniDumpWriteDump");
-		if (funcMiniDumpWriteDump != NULL) {
-			HANDLE file  = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, 0);
-			HANDLE proc  = GetCurrentProcess();
-			DWORD procid = GetCurrentProcessId();
-			MINIDUMP_EXCEPTION_INFORMATION mdei;
+	HANDLE file  = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	HANDLE proc  = GetCurrentProcess();
+	DWORD procid = GetCurrentProcessId();
+	MINIDUMP_EXCEPTION_INFORMATION mdei;
+	
+	CONTEXT c;
+	HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, GetCurrentThreadId());;
+	memset(&c, 0, sizeof(c));
+	c.ContextFlags = CONTEXT_FULL;
+	GetThreadContext(hThread, &c);
 
-			mdei.ThreadId = GetCurrentThreadId();
-			mdei.ExceptionPointers  = ep;
-			mdei.ClientPointers     = false;
+	mdei.ThreadId = GetCurrentThreadId();
+	mdei.ExceptionPointers  = ep;
+	mdei.ExceptionPointers->ContextRecord = &c;
+	mdei.ClientPointers     = false;
 
-			funcMiniDumpWriteDump(proc, procid, file, MiniDumpWithDataSegs | MiniDumpWithPrivateReadWriteMemory, &mdei, NULL, NULL);
-		}
-		FreeLibrary(dbghelp);
+	if (!MiniDumpWriteDump(proc, procid, file, MiniDumpNormal, &mdei, NULL, NULL)) {
+		wchar_t buf[256];
+
+		FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, GetLastError(), MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
+			buf, (sizeof(buf) / sizeof(wchar_t)), NULL);
+
+		error("MiniDumpWriteDump failed with error: %ls\n", buf);
 	}
+
 
 	if(!ff8)
 	{
