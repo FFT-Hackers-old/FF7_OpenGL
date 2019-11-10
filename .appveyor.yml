@@ -27,12 +27,12 @@ for:
   -
     matrix:
       only:
-        - configuration: Debug
+        - configuration: RelWithDebInfo
     build_script:
       - cmd: |
-          md .dist\build\x86-Debug
-          cd .dist/build/x86-Debug
-          cmake -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_BINARY_DIR=".dist/build/x86-Debug" ../../..
+          md .dist\build\x86-RelWithDebInfo
+          cd .dist/build/x86-RelWithDebInfo
+          cmake -G "Visual Studio 16 2019" -D_DLL_VERSION="${appveyor_build_version}" -DCMAKE_BUILD_TYPE="RelWithDebInfo" -DCMAKE_BINARY_DIR=".dist/build/x86-RelWithDebInfo" ../../..
           cmake --build .
   -
     matrix:
@@ -42,7 +42,7 @@ for:
       - cmd: |
           md .dist\build\x86-Release
           cd .dist/build/x86-Release
-          cmake -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_BINARY_DIR=".dist/build/x86-Release" ../../..
+          cmake -G "Visual Studio 16 2019" -D_DLL_VERSION="${appveyor_build_version}" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_BINARY_DIR=".dist/build/x86-Release" ../../..
           cmake --build .
 
 # Do not run unit tests
@@ -50,8 +50,8 @@ test: off
 
 # Package artifacts
 artifacts:
-  - path: .dist\build\x86-Debug\bin
-    name: FF7OpenGL-v${appveyor_build_version}_debug
+  - path: .dist\build\x86-RelWithDebInfo\bin
+    name: FF7OpenGL-v${appveyor_build_version}_relwithdebinfo
     type: zip
   - path: .dist\build\x86-Release\bin
     name: FF7OpenGL-v${appveyor_build_version}
@@ -62,8 +62,8 @@ deploy:
   - provider: GitHub
     tag: ${appveyor_repo_tag_name}
     release: FF7OpenGL-v${appveyor_build_version}
-    artifact: FF7OpenGL-v${appveyor_build_version}_debug,FF7OpenGL-v${appveyor_build_version}
+    artifact: FF7OpenGL-v${appveyor_build_version}_relwithdebinfo,FF7OpenGL-v${appveyor_build_version}
     auth_token:
-      secure: nr/+SOy4DVnJMVPUs3RZoxoekPAvpW+xxa9sMLNNujPyivbFFva4cEVShrhLgcvq
+      secure: SXUyBqg8+wl9fn3xHV2Br0xDH65EyPAnFwJbwcg94wIesv9osQEefC3zxu9iDTUh
     on:
       appveyor_repo_tag: true

@@ -44,7 +44,7 @@
  * 
  * Version string used in applog.
  */
-#define VERSION "0.8.2b"
+//#define VERSION "0.8.1b"
 
 /* 
  * SINGLE_STEP
