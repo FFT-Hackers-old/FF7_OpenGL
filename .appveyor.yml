@@ -33,7 +33,7 @@ for:
           md .dist\build\x86-RelWithDebInfo
           cd .dist/build/x86-RelWithDebInfo
           cmake -G "Visual Studio 16 2019" -A Win32 -D_DLL_VERSION="${appveyor_build_version}" -DCMAKE_BUILD_TYPE="RelWithDebInfo" -DCMAKE_BINARY_DIR=".dist/build/x86-RelWithDebInfo" ../../..
-          cmake --build .
+          cmake --build . --config RelWithDebInfo
   -
     matrix:
       only:
@@ -43,7 +43,7 @@ for:
           md .dist\build\x86-Release
           cd .dist/build/x86-Release
           cmake -G "Visual Studio 16 2019" -A Win32 -D_DLL_VERSION="${appveyor_build_version}" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_BINARY_DIR=".dist/build/x86-Release" ../../..
-          cmake --build .
+          cmake --build . --config Release
 
 # Do not run unit tests
 test: off
