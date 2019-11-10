@@ -9,7 +9,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInf
 else()
 	set(RELEASE_TYPE "RELEASE")
 endif()
-add_compile_definitions(${RELEASE_TYPE})
 
 # Include all the source code files
 file(GLOB source_files "*.h" "*.c")
@@ -26,8 +25,13 @@ target_link_libraries(ff7_opengl
 	ZLib::ZLib
 	PNG::PNG
 )
-target_compile_definitions(ff7_opengl PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
-target_compile_options(ff7_opengl PRIVATE -w)
+target_compile_options(ff7_opengl
+	PRIVATE /D_CRT_SECURE_NO_WARNINGS
+	PRIVATE /D${RELEASE_TYPE}
+)
+if(_DLL_VERSION)
+	target_compile_options(ff7_opengl PRIVATE /DVERSION="${_DLL_VERSION}")
+endif()
 set_target_properties(ff7_opengl PROPERTIES PREFIX "")
 set_target_properties(ff7_opengl PROPERTIES SUFFIX ".fgd")
 
@@ -43,8 +47,7 @@ target_link_libraries(ffmpeg_movies
 	FFMPEG::AVFormat
 	FFMPEG::SWScale
 )
-target_compile_definitions(ffmpeg_movies PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
-target_compile_options(ffmpeg_movies PRIVATE -w)
+target_compile_options(ffmpeg_movies PRIVATE /D_CRT_SECURE_NO_WARNINGS)
 set_target_properties(ffmpeg_movies PROPERTIES PREFIX "")
 set_target_properties(ffmpeg_movies PROPERTIES SUFFIX ".fgp")
 
@@ -54,16 +57,14 @@ add_subdirectory(vgmstream_music)
 target_link_libraries(vgmstream_music
     VGMSTREAM::VGMSTREAM
 )
-target_compile_definitions(vgmstream_music PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
-target_compile_options(vgmstream_music PRIVATE -w)
+target_compile_options(vgmstream_music PRIVATE /D_CRT_SECURE_NO_WARNINGS)
 set_target_properties(vgmstream_music PROPERTIES PREFIX "")
 set_target_properties(vgmstream_music PROPERTIES SUFFIX ".fgp")
 
 add_library(ff7music SHARED)
 target_include_directories(ff7music PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
 add_subdirectory(ff7music)
-target_compile_definitions(ff7music PRIVATE -D_CRT_SECURE_NO_WARNINGS=1)
-target_compile_options(ff7music PRIVATE -w)
+target_compile_options(ff7music PRIVATE /D_CRT_SECURE_NO_WARNINGS)
 set_target_properties(ff7music PROPERTIES PREFIX "")
 set_target_properties(ff7music PROPERTIES SUFFIX ".fgp")
 
