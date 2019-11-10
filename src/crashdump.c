@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <dbghelp.h>
 
+#include "crashdump.h"
 #include "globals.h"
 #include "types.h"
 #include "log.h"
@@ -57,6 +58,99 @@ static const char crash_dmp[] = "crash.dmp";
 
 static const char save_name[] = "\x25" "MERGENCY" "\x00\x33" "AVE" "\xFF";
 
+// Prints stack trace based on context record
+// Via https://stackoverflow.com/a/50208684
+void printStack(CONTEXT* ctx)
+{
+	BOOL    result;
+	HANDLE  process;
+	HANDLE  thread;
+	HMODULE hModule;
+
+	STACKFRAME64        stack;
+	ULONG               frame;
+	DWORD64             displacement;
+
+	DWORD disp;
+	IMAGEHLP_LINE64* line;
+
+	char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+	char name[STACK_MAX_NAME_LENGTH];
+	char module[STACK_MAX_NAME_LENGTH];
+	PSYMBOL_INFO pSymbol = (PSYMBOL_INFO)buffer;
+
+	memset(&stack, 0, sizeof(STACKFRAME64));
+
+	process = GetCurrentProcess();
+	thread = GetCurrentThread();
+	displacement = 0;
+#if !defined(_M_AMD64)
+	stack.AddrPC.Offset = (*ctx).Eip;
+	stack.AddrPC.Mode = AddrModeFlat;
+	stack.AddrStack.Offset = (*ctx).Esp;
+	stack.AddrStack.Mode = AddrModeFlat;
+	stack.AddrFrame.Offset = (*ctx).Ebp;
+	stack.AddrFrame.Mode = AddrModeFlat;
+#endif
+
+	SymInitialize(process, NULL, TRUE); //load symbols
+
+	for (frame = 0; ; frame++)
+	{
+		//get next call from stack
+		result = StackWalk64
+		(
+#if defined(_M_AMD64)
+			IMAGE_FILE_MACHINE_AMD64
+#else
+			IMAGE_FILE_MACHINE_I386
+#endif
+			,
+			process,
+			thread,
+			&stack,
+			ctx,
+			NULL,
+			SymFunctionTableAccess64,
+			SymGetModuleBase64,
+			NULL
+		);
+
+		if (!result) break;
+
+		//get symbol name for address
+		pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+		pSymbol->MaxNameLen = MAX_SYM_NAME;
+		SymFromAddr(process, (ULONG64)stack.AddrPC.Offset, &displacement, pSymbol);
+
+		line = (IMAGEHLP_LINE64*)malloc(sizeof(IMAGEHLP_LINE64));
+		line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+
+		//try to get line
+		if (SymGetLineFromAddr64(process, stack.AddrPC.Offset, &disp, line))
+		{
+			error("\tat %s in %s: line: %lu: address: 0x%0X\n", pSymbol->Name, line->FileName, line->LineNumber, pSymbol->Address);
+		}
+		else
+		{
+			//failed to get line
+			error("\tat %s, address 0x%0X.\n", pSymbol->Name, pSymbol->Address);
+			hModule = NULL;
+			lstrcpyA(module, "");
+			GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+				(LPCTSTR)(stack.AddrPC.Offset), &hModule);
+
+			//at least print module name
+			if (hModule != NULL) GetModuleFileNameA(hModule, module, STACK_MAX_NAME_LENGTH);
+
+			error("in %s\n", module);
+		}
+
+		free(line);
+		line = NULL;
+	}
+}
+
 LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 {
 	static bool had_exception = false;
@@ -73,18 +167,22 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 
 	had_exception = true;
 
+	error("*** Exception 0x%x occured ***\n", ep->ExceptionRecord->ExceptionCode);
+	printStack(ep->ContextRecord);
+
 	// show cursor in case it was hidden
 	ShowCursor(true);
 
 	if(!ff8)
 	{
-		save = MessageBoxA(0, "Oops! Something very bad happened\nWrote crash.dmp to FF7 install dir.\n"
-			"Please provide a copy of it along with APP.LOG when reporting this error.\n"
-			"Write emergency save to save/crash.ff7?", "Error", MB_YESNO) == IDYES;
+		MessageBoxA(0, "Oops! Something very bad happened\n\nWrote crash.dmp to FF7 install dir.\nWrote emergency save to save/crash.ff7 dir.\n\n"
+			"Please provide a copy of it along with APP.LOG when reporting this error.\n", "Error", MB_OK);
+
+		save = true;
 	}
 	else
 	{
-		MessageBoxA(0, "Oops! Something very bad happened\nWrote crash.dmp to FF8 install dir.\n"
+		MessageBoxA(0, "Oops! Something very bad happened\n\nWrote crash.dmp to FF8 install dir.\n\n"
 			"Please provide a copy of it along with APP.LOG when reporting this error.\n", "Error", MB_OK);
 
 		save = false;
@@ -92,29 +190,32 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 
 	// save crash dump to game directory
 	sprintf(filename, "%s/%s", basedir, crash_dmp);
-	dbghelp = LoadLibrary(TEXT("dbghelp.dll"));
-	if (dbghelp != NULL)
-	{
-		typedef BOOL (WINAPI *MiniDumpWriteDump_t)(HANDLE, DWORD, HANDLE,
-				MINIDUMP_TYPE,
-				CONST PMINIDUMP_EXCEPTION_INFORMATION,
-				CONST PMINIDUMP_USER_STREAM_INFORMATION,
-				CONST PMINIDUMP_CALLBACK_INFORMATION);
-		MiniDumpWriteDump_t funcMiniDumpWriteDump = (MiniDumpWriteDump_t)GetProcAddress(dbghelp, "MiniDumpWriteDump");
-		if (funcMiniDumpWriteDump != NULL) {
-			HANDLE file  = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, 0);
-			HANDLE proc  = GetCurrentProcess();
-			DWORD procid = GetCurrentProcessId();
-			MINIDUMP_EXCEPTION_INFORMATION mdei;
+	HANDLE file  = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	HANDLE proc  = GetCurrentProcess();
+	DWORD procid = GetCurrentProcessId();
+	MINIDUMP_EXCEPTION_INFORMATION mdei;
+	
+	CONTEXT c;
+	HANDLE hThread = OpenThread(THREAD_ALL_ACCESS, FALSE, GetCurrentThreadId());;
+	memset(&c, 0, sizeof(c));
+	c.ContextFlags = CONTEXT_FULL;
+	GetThreadContext(hThread, &c);
 
-			mdei.ThreadId = GetCurrentThreadId();
-			mdei.ExceptionPointers  = ep;
-			mdei.ClientPointers     = false;
+	mdei.ThreadId = GetCurrentThreadId();
+	mdei.ExceptionPointers  = ep;
+	mdei.ExceptionPointers->ContextRecord = &c;
+	mdei.ClientPointers     = false;
 
-			funcMiniDumpWriteDump(proc, procid, file, MiniDumpWithDataSegs | MiniDumpWithPrivateReadWriteMemory, &mdei, NULL, NULL);
-		}
-		FreeLibrary(dbghelp);
+	if (!MiniDumpWriteDump(proc, procid, file, MiniDumpNormal, &mdei, NULL, NULL)) {
+		wchar_t buf[256];
+
+		FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, GetLastError(), MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
+			buf, (sizeof(buf) / sizeof(wchar_t)), NULL);
+
+		error("MiniDumpWriteDump failed with error: %ls\n", buf);
 	}
+
 
 	if(!ff8)
 	{

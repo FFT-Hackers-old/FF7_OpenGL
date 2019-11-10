@@ -32,7 +32,7 @@ for:
       - cmd: |
           md .dist\build\x86-Debug
           cd .dist/build/x86-Debug
-          cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_BINARY_DIR=".dist/build/x86-Debug" ../../..
+          cmake -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE="Debug" -DCMAKE_BINARY_DIR=".dist/build/x86-Debug" ../../..
           cmake --build .
   -
     matrix:
@@ -42,7 +42,7 @@ for:
       - cmd: |
           md .dist\build\x86-Release
           cd .dist/build/x86-Release
-          cmake -G "Ninja" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_BINARY_DIR=".dist/build/x86-Release" ../../..
+          cmake -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_BINARY_DIR=".dist/build/x86-Release" ../../..
           cmake --build .
 
 # Do not run unit tests

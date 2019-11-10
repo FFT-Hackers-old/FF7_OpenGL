@@ -1,17 +1,15 @@
 #define inline _inline
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libswresample/swresample.h> //+Maki - it lacks the resampler library
 #include <libswscale/swscale.h>
-#include <libavutil/frame.h>
+#include <libswresample/swresample.h>
 #include <windows.h>
 #include <gl/glew.h>
 #include <math.h>
 #include <sys/timeb.h>
 #include <dsound.h>
-//#include "../patch.h"
-#include "types.h"
 
+#include "types.h"
 
 // 10 frames
 #define VIDEO_BUFFER_SIZE 10
@@ -19,7 +17,7 @@
 // 20 seconds
 #define AUDIO_BUFFER_SIZE 20
 
-#define MAX_AUDIO_FRAME_SIZE 192000
+#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000
 
 inline double round(double x) { return floor(x + 0.5); }
 
@@ -30,6 +28,8 @@ uint texture_units = 1;
 bool yuv_init_done = false;
 bool yuv_fast_path = false;
 
+bool must_audio_be_converted = false;
+
 AVFormatContext *format_ctx = 0;
 AVCodecContext *codec_ctx = 0;
 AVCodec *codec = 0;
@@ -37,13 +37,12 @@ AVCodecContext *acodec_ctx = 0;
 AVCodec *acodec = 0;
 AVFrame *movie_frame = 0;
 struct SwsContext *sws_ctx = 0;
-struct SwrContext *swr_ctx = 0; //+Maki
+SwrContext* swr_ctx;
 
 int videostream;
 int audiostream;
 
 bool use_bgra_texture;
-bool bShouldConvertAudio = false;
 
 struct video_frame
 {
@@ -87,7 +86,6 @@ void (*error)(char *, ...);
 void (*draw_movie_quad_bgra)(GLuint, uint, uint);
 void (*draw_movie_quad_yuv)(GLuint *, uint, uint, bool);
 
-
 IDirectSound **directsound;
 
 BOOL APIENTRY DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
@@ -109,9 +107,8 @@ __declspec(dllexport) void movie_init(void *plugin_trace, void *plugin_info, voi
 	skip_frames = plugin_skip_frames;
 	movie_sync_debug = plugin_movie_sync_debug;
 
-
 	info("FFMpeg movie player plugin loaded\n");
-	info("FFMpeg version SVN-r25886, Copyright (c) 2000-2019 Fabrice Bellard, et al.\n");
+	info("FFMpeg version 4.2.1, Copyright (c) 2000-2019 Fabrice Bellard, et al.\n");
 
 	glewInit();
 
@@ -150,16 +147,6 @@ __declspec(dllexport) void release_movie_objects()
 		glDeleteTextures(3, video_buffer[i].yuv_textures);
 		memset(video_buffer[i].yuv_textures, 0, sizeof(video_buffer[i].yuv_textures));
 	}
-}
-
-uint getuint(uint base)
-{
-	return *((uint *)(base));
-}
-
-char getbyte(uint base)
-{
-	return *((char *)(base));
 }
 
 // prepare a movie for playback
@@ -274,11 +261,10 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 	if(audiostream != -1)
 	{
-
-		if(acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {bShouldConvertAudio=true;} //+Maki
+		if (acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) { must_audio_be_converted = true; }
 
 		sound_format.cbSize = sizeof(sound_format);
-		sound_format.wBitsPerSample = bShouldConvertAudio ? 16 : acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 8 : 16; //+Maki
+		sound_format.wBitsPerSample = (must_audio_be_converted ? 16 : acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 8 : 16);
 		sound_format.nChannels = acodec_ctx->channels;
 		sound_format.nSamplesPerSec = acodec_ctx->sample_rate;
 		sound_format.nBlockAlign = sound_format.nChannels * sound_format.wBitsPerSample / 8;
@@ -289,11 +275,10 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 		sbdesc.dwSize = sizeof(sbdesc);
 		sbdesc.lpwfxFormat = &sound_format;
-		sbdesc.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME; //DLPB
+		sbdesc.dwFlags = 0;
 		sbdesc.dwReserved = 0;
 		sbdesc.dwBufferBytes = sound_buffer_size;
 
-	
 		if(ret = IDirectSound_CreateSoundBuffer(*directsound, (LPCDSBUFFERDESC)&sbdesc, &sound_buffer, 0))
 		{
 			error("couldn't create sound buffer (%i, %i, %i, %i)\n", acodec_ctx->sample_fmt, acodec_ctx->bit_rate, acodec_ctx->sample_rate, acodec_ctx->channels);
@@ -303,20 +288,14 @@ __declspec(dllexport) uint prepare_movie(char *name)
 		first_audio_packet = true;
 		write_pointer = 0;
 
-		//+Maki
-		swr_ctx = swr_alloc_set_opts(
-			NULL,
-			AV_CH_LAYOUT_STEREO, //  will this be ok for mono streams? 
-			AV_SAMPLE_FMT_S16,
-			acodec_ctx->sample_rate, // Output - probably not a good idea to use acodec_ctx->sample_rate  
-			acodec_ctx->channel_layout,
-			acodec_ctx->sample_fmt,
-			acodec_ctx->sample_rate,
-			0,
-			NULL
-		);
+		swr_ctx = swr_alloc();
+		av_opt_set_channel_layout(swr_ctx, "in_channel_layout", acodec_ctx->channel_layout, 0);
+		av_opt_set_channel_layout(swr_ctx, "out_channel_layout", acodec_ctx->channel_layout, 0);
+		av_opt_set_int(swr_ctx, "in_sample_rate", acodec_ctx->sample_rate, 0);
+		av_opt_set_int(swr_ctx, "out_sample_rate", acodec_ctx->sample_rate, 0);
+		av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", AV_SAMPLE_FMT_FLTP, 0);
+		av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
 		swr_init(swr_ctx);
-		//-Maki
 	}
 
 exit:
@@ -413,51 +392,11 @@ void draw_yuv_frame(uint buffer_index, bool full_range)
 	draw_movie_quad_yuv(video_buffer[buffer_index].yuv_textures, movie_width, movie_height, full_range);
 }
 
-void setfmvvolume()
-{
-uint ff7musicvolume;
-int dsoundvolume;
-
-	ff7musicvolume = getuint(0xDC10D0); 
-
-	if (ff7musicvolume == 0)
-		dsoundvolume = -10000;	
-	else
-		dsoundvolume = round (log10( (float)ff7musicvolume / 100.0f) * 2000.0f );
-
-	if (IDirectSoundBuffer_SetVolume(sound_buffer, dsoundvolume) ) error("couldn't set volume on sound buffer\n");		
-	
-
-	info("test %i\n", dsoundvolume);
-}
-
-/*Drop in replacement for the old video and audio decodings function*/
-int custom_decode(AVCodecContext *codec_ctx, AVFrame *frame, int* got_frame, AVPacket *packet)
-{
-	int ret;
-
-    *got_frame = 0;
-
-	if (packet) {
-		ret = avcodec_send_packet(codec_ctx, packet);
-		if (ret < 0)
-			return ret == AVERROR_EOF ? 0 : ret;
-	}
-
-	ret = avcodec_receive_frame(codec_ctx, frame);
-	if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
-		return ret;
-    if (ret >= 0)
-        *got_frame = 1;
-
-	return 0;
-}
-
 // display the next frame
 __declspec(dllexport) bool update_movie_sample()
 {
 	AVPacket packet;
-	int frame_finished;
+	bool frame_finished;
 	int ret;
 	time_t now;
 
@@ -471,7 +410,7 @@ __declspec(dllexport) bool update_movie_sample()
 	{
 		if(packet.stream_index == videostream)
 		{
-			custom_decode(codec_ctx, movie_frame, &frame_finished, &packet);
+			avcodec_decode_video2(codec_ctx, movie_frame, &frame_finished, &packet);
 
 			if(frame_finished)
 			{
@@ -484,13 +423,12 @@ __declspec(dllexport) bool update_movie_sample()
 				{
 					skipped_frames++;
 					if(((skipped_frames - 1) & skipped_frames) == 0) glitch("video playback is lagging behind, skipping frames (frame #: %i, skipped: %i, lag: %f)\n", movie_frame_counter, skipped_frames, LAG);
-					av_packet_unref(&packet);
+					av_free_packet(&packet);
 					if(use_bgra_texture) draw_bgra_frame(vbuffer_read);
 					else draw_yuv_frame(vbuffer_read, codec_ctx->color_range == AVCOL_RANGE_JPEG);
 					break;
-				} 
-				else 
-				skipping_frames = false;
+				}
+				else skipping_frames = false;
 
 				if(movie_sync_debug) info("video: DTS %f PTS %f (timebase %f) placed in video buffer at real time %f (play %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(codec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)movie_frame_counter / (double)movie_fps);
 				
@@ -512,7 +450,7 @@ __declspec(dllexport) bool update_movie_sample()
 				else if(use_bgra_texture) buffer_bgra_frame(movie_frame->data[0], movie_frame->linesize[0]);
 				else buffer_yuv_frame(movie_frame->data, movie_frame->linesize);
 
-				av_packet_unref(&packet);
+				av_free_packet(&packet);
 
 				if(vbuffer_write == vbuffer_read)
 				{
@@ -528,15 +466,14 @@ __declspec(dllexport) bool update_movie_sample()
 
 		if(packet.stream_index == audiostream)
 		{
-			char buffer_storage[(MAX_AUDIO_FRAME_SIZE * 3) / 2];
-			char *buffer = (char *)(((((uint)buffer_storage) + 15) / 16) * 16);
-			uint size = MAX_AUDIO_FRAME_SIZE;
+			uint8_t *buffer;
+			int buffer_size = 0;
 			int used_bytes;
-			char *packet_data = packet.data;
+			char* packet_data = packet.data;
 			uint packet_size = packet.size;
 			uint playcursor;
 			uint writecursor;
-			uint bytespersec = (bShouldConvertAudio ? 1 : acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2) * acodec_ctx->channels * acodec_ctx->sample_rate; //+Maki
+			uint bytespersec = (must_audio_be_converted ? 1 : (acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2)) * acodec_ctx->channels * acodec_ctx->sample_rate;
 
 			QueryPerformanceCounter((LARGE_INTEGER *)&now);
 
@@ -546,85 +483,54 @@ __declspec(dllexport) bool update_movie_sample()
 				info("audio: DTS %f PTS %f (timebase %f) placed in sound buffer at real time %f (play %f write %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(acodec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)playcursor / (double)bytespersec, (double)write_pointer / (double)bytespersec);
 			}
 
-			while((used_bytes = custom_decode(acodec_ctx, movie_frame, &frame_finished, &packet)) >= 0) //+Maki
+			while (packet_size > 0)
 			{
-				//+Maki
-				uint8_t *outBuffer;
-				av_samples_alloc(&outBuffer, NULL, acodec_ctx->channels, movie_frame->nb_samples, AV_SAMPLE_FMT_S16, 0);
-				int res = swr_convert(swr_ctx, &outBuffer, movie_frame->nb_samples, movie_frame->data, movie_frame->nb_samples);
-				int _size = 2*movie_frame->nb_samples*movie_frame->channels; //real buffer size
-				//-Maki
+				used_bytes = avcodec_decode_audio4(acodec_ctx, movie_frame, &frame_finished, &packet);
 
-				char *ptr1;
-				char *ptr2;
-				uint bytes1;
-				uint bytes2;
-				
-
-				if(sound_buffer && size)
+				if (used_bytes < 0)
 				{
-					if(IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("couldn't lock sound buffer\n"); //+Maki
-					//info("MAKI: %d, %x, %d, %d", bytes1, outBuffer, write_pointer, bytes2);
-					memcpy(ptr1, outBuffer, bytes1);
-					//memcpy(ptr2, &buffer[bytes1], bytes2);
-
-					if(IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("couldn't unlock sound buffer\n");
-
-					write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
-
-					packet_data += used_bytes;
-					packet_size -= used_bytes;
-					size = sizeof(buffer);
+					error("ffmpeg_movies: avcodec_decode_audio4() failed, code %d\n", used_bytes);
+					break;
 				}
-				av_freep(&outBuffer); //+Maki
-				break; //+Maki
-			}
-		} 
 
-		av_packet_unref(&packet);
-	} 
+				packet_data += used_bytes;
+				packet_size -= used_bytes;
+
+				if (frame_finished) {
+					av_samples_alloc(&buffer, NULL, acodec_ctx->channels, movie_frame->nb_samples, AV_SAMPLE_FMT_S16, 0);
+					swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->data, movie_frame->nb_samples);
+					int _size = 2 * movie_frame->nb_samples * movie_frame->channels;
+
+					char* ptr1;
+					char* ptr2;
+					uint bytes1;
+					uint bytes2;
+
+					if (sound_buffer) {
+						if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("couldn't lock sound buffer\n");
+						memcpy(ptr1, buffer, bytes1);
+						if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("couldn't unlock sound buffer\n");
+
+						write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
+					}
+				}
+			}
+		}
+
+		av_free_packet(&packet);
+	}
 
 	if(sound_buffer && first_audio_packet)
 	{
 		if(movie_sync_debug) info("audio start\n");
 
-		setfmvvolume();
-	
 		// reset start time so video syncs up properly
 		QueryPerformanceCounter((LARGE_INTEGER *)&start_time);
 		if(IDirectSoundBuffer_Play(sound_buffer, 0, 0, DSBPLAY_LOOPING)) error("couldn't play sound buffer\n");
 		first_audio_packet = false;
 	}
 
-	if (sound_buffer) //Maki
-    {
-		
-    DWORD status = 0;
-    IDirectSoundBuffer_GetStatus(sound_buffer, &status);
-    if(!status)
-        IDirectSoundBuffer_Play(sound_buffer, 0, 0, DSBPLAY_LOOPING);
-    }
-
-
-	if (sound_buffer) //DLPB
-	{  
-	char IsGlobalMute;
-
-	IsGlobalMute = getbyte(0xDC0BA9);
-
-     if (IsGlobalMute == 1)
-	 { info("mute\n");
-     	if (IDirectSoundBuffer_SetVolume(sound_buffer, -10000) ) error("couldn't mute the sound buffer\n");	
-	 } 
-	 else
-	   {
-        setfmvvolume();
-	   }
-
-	}
-	
 	movie_frame_counter++;
-
 
 	// could not read any more frames, exhaust video buffer then end movie
 	if(ret < 0)
@@ -648,6 +554,13 @@ __declspec(dllexport) bool update_movie_sample()
 
 	// keep going
 	return true;
+}
+
+// draw the current frame, don't update anything
+__declspec(dllexport) void draw_current_frame()
+{
+	if(use_bgra_texture) draw_bgra_frame((vbuffer_read - 1) % VIDEO_BUFFER_SIZE);
+	else draw_yuv_frame((vbuffer_read - 1) % VIDEO_BUFFER_SIZE, codec_ctx->color_range == AVCOL_RANGE_JPEG);
 }
 
 // loop back to the beginning of the movie

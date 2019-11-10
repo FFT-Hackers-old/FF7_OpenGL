@@ -304,15 +304,11 @@ uint lgp_get_filesize(struct lgp_file *file, uint lgp_num)
 	}
 	else
 	{
-        uint offset;
-        uint size;
+		struct stat s;
 
-        offset = ftell(file->fd);
-        fseek(file->fd, 0, SEEK_END);
-        size = ftell(file->fd);
-        fseek(file->fd, offset, SEEK_SET);
+		fstat(fileno(file->fd), &s);
 
-		return size;
+		return s.st_size;
 	}
 }
 
@@ -488,25 +484,17 @@ bool write_file(uint count, void *buffer, struct ff7_file *file)
 // retrieve the size of a file from file handle
 uint get_filesize(struct ff7_file *file)
 {
-	if (!file)
-        return 0;
+	if(!file) return 0;
 
-	if (trace_files)
-        trace("get_filesize %s\n", file->name);
+	if(trace_files) trace("get_filesize %s\n", file->name);
 
-	if (file->context.use_lgp)
-        return lgp_get_filesize(file->fd, file->context.lgp_num);
+	if(file->context.use_lgp) return lgp_get_filesize(file->fd, file->context.lgp_num);
 	else
 	{
-        uint offset;
-        uint size;
+		struct stat s;
+		fstat(fileno(file->fd->fd), &s);
 
-        offset = ftell(file->fd->fd);
-        fseek(file->fd->fd, 0, SEEK_END);
-        size = ftell(file->fd->fd);
-        fseek(file->fd->fd, offset, SEEK_SET);
-
-		return size;
+		return s.st_size;
 	}
 }
 
@@ -553,8 +541,8 @@ char *make_pc_name(struct file_context *file_context, struct ff7_file *file, cha
 	{
 		if(ret[i] == '.')
 		{
-			if(!_stricmp(&ret[i], ".tex")) ret[i] = 0;
-			else if(!_stricmp(&ret[i], ".p")) ret[i] = 0;
+			if(!stricmp(&ret[i], ".tex")) ret[i] = 0;
+			else if(!stricmp(&ret[i], ".p")) ret[i] = 0;
 			else ret[i] = '_';
 		}
 	}

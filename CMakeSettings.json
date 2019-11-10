@@ -1,40 +1,40 @@
 ﻿{
-    "configurations": [
-        {
-            "name": "x86-Release",
-            "generator": "Ninja",
-            "configurationType": "Release",
-            "inheritEnvironments": [ "msvc_x86" ],
-            "buildRoot": "${projectDir}\\.dist\\build\\${name}",
-            "installRoot": "${projectDir}\\.dist\\install\\${name}",
-            "cmakeCommandArgs": "",
-            "buildCommandArgs": "-v",
-            "ctestCommandArgs": "",
-            "variables": []
-        },
-        {
-            "name": "x86-RelWithDebInfo",
-            "generator": "Ninja",
-            "configurationType": "RelWithDebInfo",
-            "inheritEnvironments": [ "msvc_x86" ],
-            "buildRoot": "${projectDir}\\.dist\\build\\${name}",
-            "installRoot": "${projectDir}\\.dist\\install\\${name}",
-            "cmakeCommandArgs": "",
-            "buildCommandArgs": "-v",
-            "ctestCommandArgs": "",
-            "variables": []
-        },
-        {
-            "name": "x86-Debug",
-            "generator": "Ninja",
-            "configurationType": "Debug",
-            "inheritEnvironments": [ "msvc_x86" ],
-            "buildRoot": "${projectDir}\\.dist\\build\\${name}",
-            "installRoot": "${projectDir}\\.dist\\install\\${name}",
-            "cmakeCommandArgs": "",
-            "buildCommandArgs": "-v",
-            "ctestCommandArgs": "",
-            "variables": []
-        }
-    ]
+  "configurations": [
+    {
+      "name": "x86-Release",
+      "generator": "Visual Studio 16 2019",
+      "configurationType": "Release",
+      "inheritEnvironments": [ "msvc_x86_x64" ],
+      "buildRoot": "${projectDir}\\.dist\\build\\${name}",
+      "installRoot": "${projectDir}\\.dist\\install\\${name}",
+      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=Release",
+      "buildCommandArgs": "-v:normal",
+      "ctestCommandArgs": "",
+      "variables": []
+    },
+    {
+      "name": "x86-RelWithDebInfo",
+      "generator": "Visual Studio 16 2019",
+      "configurationType": "RelWithDebInfo",
+      "inheritEnvironments": [ "msvc_x86_x64" ],
+      "buildRoot": "${projectDir}\\.dist\\build\\${name}",
+      "installRoot": "${projectDir}\\.dist\\install\\${name}",
+      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+      "buildCommandArgs": "-v:normal",
+      "ctestCommandArgs": "",
+      "variables": []
+    },
+    {
+      "name": "x86-Debug",
+      "generator": "Visual Studio 16 2019",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x86_x64" ],
+      "buildRoot": "${projectDir}\\.dist\\build\\${name}",
+      "installRoot": "${projectDir}\\.dist\\install\\${name}",
+      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=Debug",
+      "buildCommandArgs": "-v:normal",
+      "ctestCommandArgs": "",
+      "variables": []
+    }
+  ]
 }

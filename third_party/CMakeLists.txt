@@ -1,5 +1,6 @@
 add_subdirectory(glew)
 add_subdirectory(zlib)
 add_subdirectory(libpng)
+add_subdirectory(x264)
 add_subdirectory(ffmpeg)
 add_subdirectory(vgmstream)

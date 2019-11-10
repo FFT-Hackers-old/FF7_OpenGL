@@ -2,15 +2,14 @@ include(ExternalProject)
 
 ExternalProject_Add(
 	vgmstream
-	GIT_REPOSITORY			"https://github.com/julianxhokaxhiu/vgmstream.git"
-	GIT_TAG 						"origin/feature/FF7_OpenGL"
-	GIT_SHALLOW					true
-	INSTALL_DIR						"${CMAKE_BINARY_DIR}/vendor"
+	URL				"https://github.com/FFT-Hackers/vgmstream/archive/feature/FF7_OpenGL.zip"
+	INSTALL_DIR		"${CMAKE_BINARY_DIR}/vendor"
+	PATCH_COMMAND   "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third_party/vgmstream/CMakeLists.txt.in" "<SOURCE_DIR>/CMakeLists.txt"
 	CMAKE_ARGS
 		"-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
 		"-DCMAKE_PREFIX_PATH=<INSTALL_DIR>"
 		"-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
-		"-DCMAKE_SH=CMAKE_SH-NOTFOUND"
+		"-DUSE_FFMPEG=OFF"
 		"-DUSE_FDKAAC=OFF"
 		"-DUSE_MPEG=OFF"
 		"-DUSE_VORBIS=OFF"

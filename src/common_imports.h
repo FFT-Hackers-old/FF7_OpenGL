@@ -62,37 +62,37 @@ enum effects
 };
 
 // helper definitions for all the different functions which should be provided by the graphics driver
-typedef bool (*gfx_init)(struct game_obj *);
-typedef void (*gfx_cleanup)(struct game_obj *);
-typedef bool (*gfx_lock)(uint);
-typedef bool (*gfx_unlock)(uint);
-typedef void (*gfx_flip)(struct game_obj *);
-typedef void (*gfx_clear)(bool, bool, bool, struct game_obj *);
-typedef void (*gfx_clear_all)(struct game_obj *);
-typedef void (*gfx_setviewport)(uint, uint, uint, uint, struct game_obj *);
-typedef void (*gfx_setbg)(struct bgra_color *, struct game_obj *);
-typedef bool (*gfx_prepare_polygon_set)(struct polygon_set *);
-typedef bool (*gfx_load_group)(uint, struct matrix_set *, struct p_hundred *, struct p_group *, struct polygon_data *, struct polygon_set *, struct game_obj *);
-typedef void (*gfx_setmatrix)(uint, struct matrix *, struct matrix_set *, struct game_obj *);
-typedef void (*gfx_unload_texture)(struct texture_set *);
-typedef struct texture_set (*gfx_load_texture)(struct texture_set *, struct tex_header *, struct texture_format *);
-typedef bool (*gfx_palette_changed)(uint, uint, uint, struct palette *, struct texture_set *);
-typedef bool (*gfx_write_palette)(uint, uint, void *, uint, struct palette *, struct texture_set *);
-typedef struct blend_mode (*gfx_blendmode)(uint, struct game_obj *);
-typedef void (*gfx_light_polygon_set)(struct polygon_set *, void *);
-typedef void (*gfx_field_64)(uint, uint, struct game_obj *);
-typedef void (*gfx_setrenderstate)(struct p_hundred *, struct game_obj *);
-typedef void (*gfx_field_74)(uint, struct game_obj *);
-typedef void (*gfx_field_78)(struct polygon_set *, struct game_obj *);
-typedef void (*gfx_draw_deferred)(struct struc_77 *, struct game_obj *);
-typedef void (*gfx_field_80)(struct graphics_object *, struct game_obj *);
-typedef void (*gfx_field_84)(uint, struct game_obj *);
-typedef bool (*gfx_begin_scene)(uint, struct game_obj *);
-typedef void (*gfx_end_scene)(struct game_obj *);
-typedef void (*gfx_field_90)(uint);
-typedef void (*gfx_polysetrenderstate)(struct polygon_set *, struct indexed_vertices *, struct game_obj *);
-typedef void (*gfx_draw_vertices)(struct polygon_set *, struct indexed_vertices *, struct game_obj *);
-typedef void (*gfx_field_EC)(struct game_obj *);
+typedef bool (gfx_init)(struct game_obj *);
+typedef void (gfx_cleanup)(struct game_obj *);
+typedef bool (gfx_lock)(uint);
+typedef bool (gfx_unlock)(uint);
+typedef void (gfx_flip)(struct game_obj *);
+typedef void (gfx_clear)(bool, bool, bool, struct game_obj *);
+typedef void (gfx_clear_all)(struct game_obj *);
+typedef void (gfx_setviewport)(uint, uint, uint, uint, struct game_obj *);
+typedef void (gfx_setbg)(struct bgra_color *, struct game_obj *);
+typedef bool (gfx_prepare_polygon_set)(struct polygon_set *);
+typedef bool (gfx_load_group)(uint, struct matrix_set *, struct p_hundred *, struct p_group *, struct polygon_data *, struct polygon_set *, struct game_obj *);
+typedef void (gfx_setmatrix)(uint, struct matrix *, struct matrix_set *, struct game_obj *);
+typedef void (gfx_unload_texture)(struct texture_set *);
+typedef struct texture_set *(gfx_load_texture)(struct texture_set *, struct tex_header *, struct texture_format *);
+typedef bool (gfx_palette_changed)(uint, uint, uint, struct palette *, struct texture_set *);
+typedef bool (gfx_write_palette)(uint, uint, void *, uint, struct palette *, struct texture_set *);
+typedef struct blend_mode *(gfx_blendmode)(uint, struct game_obj *);
+typedef void (gfx_light_polygon_set)(struct polygon_set *, void *);
+typedef void (gfx_field_64)(uint, uint, struct game_obj *);
+typedef void (gfx_setrenderstate)(struct p_hundred *, struct game_obj *);
+typedef void (gfx_field_74)(uint, struct game_obj *);
+typedef void (gfx_field_78)(struct polygon_set *, struct game_obj *);
+typedef void (gfx_draw_deferred)(struct struc_77 *, struct game_obj *);
+typedef void (gfx_field_80)(struct graphics_object *, struct game_obj *);
+typedef void (gfx_field_84)(uint, struct game_obj *);
+typedef bool (gfx_begin_scene)(uint, struct game_obj *);
+typedef void (gfx_end_scene)(struct game_obj *);
+typedef void (gfx_field_90)(uint);
+typedef void (gfx_polysetrenderstate)(struct polygon_set *, struct indexed_vertices *, struct game_obj *);
+typedef void (gfx_draw_vertices)(struct polygon_set *, struct indexed_vertices *, struct game_obj *);
+typedef void (gfx_field_EC)(struct game_obj *);
 
 /*
  * This section defines some structures used internally by both game engines.

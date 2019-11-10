@@ -1,7 +1,3 @@
-target_sources(ff7_opengl
-	PRIVATE
-		${CMAKE_CURRENT_LIST_DIR}/config.h
-		${CMAKE_CURRENT_LIST_DIR}/confuse.h
-		${CMAKE_CURRENT_LIST_DIR}/confuse.c
-		${CMAKE_CURRENT_LIST_DIR}/lexer.c
-) 
+file(GLOB 3rdparty_source_files "*.h" "*.c")
+
+target_sources(ff7_opengl PRIVATE ${3rdparty_source_files})
