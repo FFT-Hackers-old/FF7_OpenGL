@@ -120,7 +120,7 @@ void load_song(char *midi, uint id)
 
 		if(!vgmstream[id])
 		{
-			error("couldn't open music file: %s\n", tmp);
+			error("Couldn't open music file: %s\n", tmp);
 			return;
 		}
 	}

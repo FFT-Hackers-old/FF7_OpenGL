@@ -7,7 +7,7 @@
       "inheritEnvironments": [ "msvc_x86_x64" ],
       "buildRoot": "${projectDir}\\.dist\\build\\${name}",
       "installRoot": "${projectDir}\\.dist\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=Release",
+      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=Release -D_DLL_VERSION=devel",
       "buildCommandArgs": "-v:normal",
       "ctestCommandArgs": "",
       "variables": []
@@ -19,7 +19,7 @@
       "inheritEnvironments": [ "msvc_x86_x64" ],
       "buildRoot": "${projectDir}\\.dist\\build\\${name}",
       "installRoot": "${projectDir}\\.dist\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=RelWithDebInfo -D_DLL_VERSION=devel",
       "buildCommandArgs": "-v:normal",
       "ctestCommandArgs": "",
       "variables": []
@@ -31,7 +31,7 @@
       "inheritEnvironments": [ "msvc_x86_x64" ],
       "buildRoot": "${projectDir}\\.dist\\build\\${name}",
       "installRoot": "${projectDir}\\.dist\\install\\${name}",
-      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=Debug",
+      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=Debug -D_DLL_VERSION=devel",
       "buildCommandArgs": "-v:normal",
       "ctestCommandArgs": "",
       "variables": []

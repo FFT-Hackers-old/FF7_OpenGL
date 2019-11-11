@@ -22,7 +22,6 @@ target_include_directories(ff7_opengl PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(ff7_opengl
 	dbghelp
 	GLEW::GLEW
-	ZLib::ZLib
 	PNG::PNG
 )
 target_compile_options(ff7_opengl
@@ -39,7 +38,6 @@ add_library(ffmpeg_movies SHARED)
 target_include_directories(ffmpeg_movies PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
 add_subdirectory(ffmpeg_movies)
 target_link_libraries(ffmpeg_movies
-	bcrypt
 	GLEW::GLEW
 	FFMPEG::AVUtil
 	FFMPEG::SWResample
@@ -55,7 +53,7 @@ add_library(vgmstream_music SHARED)
 target_include_directories(vgmstream_music PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
 add_subdirectory(vgmstream_music)
 target_link_libraries(vgmstream_music
-    VGMSTREAM::VGMSTREAM
+	VGMSTREAM::VGMSTREAM
 )
 target_compile_options(vgmstream_music PRIVATE /D_CRT_SECURE_NO_WARNINGS)
 set_target_properties(vgmstream_music PROPERTIES PREFIX "")
