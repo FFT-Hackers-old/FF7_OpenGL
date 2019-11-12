@@ -618,7 +618,7 @@ void common_unload_texture(struct texture_set *texture_set)
 	if(VREF(texture_set, ogl.external)) stats.external_textures--;
 
 	// remove modpath cache reference
-	//ext_cache_release(VPTR(texture_set));
+	ext_cache_release(VPTR(texture_set));
 
 	// remove any other references to this texture
 	gl_check_deferred(VPTR(texture_set));
