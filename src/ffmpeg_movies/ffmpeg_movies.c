@@ -127,10 +127,17 @@ __declspec(dllexport) void release_movie_objects()
 {
 	uint i;
 
-	if(codec_ctx) avcodec_close(codec_ctx);
-	if(acodec_ctx) avcodec_close(acodec_ctx);
-	if(format_ctx) avformat_close_input(&format_ctx);
-	if(sound_buffer && *directsound) IDirectSoundBuffer_Release(sound_buffer);
+	if (movie_frame) av_frame_free(&movie_frame);
+	if (codec_ctx) {
+		avcodec_close(codec_ctx);
+		avcodec_free_context(&codec_ctx);
+	}
+	if (acodec_ctx) {
+		avcodec_close(acodec_ctx);
+		avcodec_free_context(&acodec_ctx);
+	}
+	if (format_ctx) avformat_close_input(&format_ctx);
+	if (sound_buffer && *directsound) IDirectSoundBuffer_Release(sound_buffer);
 
 	codec_ctx = 0;
 	acodec_ctx = 0;
@@ -406,6 +413,9 @@ __declspec(dllexport) bool update_movie_sample()
 	// keep track of when we started playing this movie
 	if(movie_frame_counter == 0) QueryPerformanceCounter((LARGE_INTEGER *)&start_time);
 
+	// set default values.
+	av_init_packet(&packet);
+
 	while((ret = av_read_frame(format_ctx, &packet)) >= 0)
 	{
 		if(packet.stream_index == videostream)
@@ -441,14 +451,14 @@ __declspec(dllexport) bool update_movie_sample()
 					planes[0] = data;
 					strides[0] = movie_width * 3;
 
-					sws_scale(sws_ctx, movie_frame->data, movie_frame->linesize, 0, movie_height, planes, strides);
+					sws_scale(sws_ctx, movie_frame->extended_data, movie_frame->linesize, 0, movie_height, planes, strides);
 
 					buffer_bgra_frame(data, movie_width * 3);
 
 					free(data);
 				}
-				else if(use_bgra_texture) buffer_bgra_frame(movie_frame->data[0], movie_frame->linesize[0]);
-				else buffer_yuv_frame(movie_frame->data, movie_frame->linesize);
+				else if(use_bgra_texture) buffer_bgra_frame(movie_frame->extended_data[0], movie_frame->linesize[0]);
+				else buffer_yuv_frame(movie_frame->extended_data, movie_frame->linesize);
 
 				av_free_packet(&packet);
 
@@ -498,7 +508,7 @@ __declspec(dllexport) bool update_movie_sample()
 
 				if (frame_finished) {
 					av_samples_alloc(&buffer, NULL, acodec_ctx->channels, movie_frame->nb_samples, AV_SAMPLE_FMT_S16, 0);
-					swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->data, movie_frame->nb_samples);
+					swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->extended_data, movie_frame->nb_samples);
 					int _size = 2 * movie_frame->nb_samples * movie_frame->channels;
 
 					char* ptr1;
@@ -509,6 +519,7 @@ __declspec(dllexport) bool update_movie_sample()
 					if (sound_buffer) {
 						if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("couldn't lock sound buffer\n");
 						memcpy(ptr1, buffer, bytes1);
+						memcpy(ptr2, &buffer[bytes1], bytes2);
 						if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("couldn't unlock sound buffer\n");
 
 						write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
@@ -517,7 +528,7 @@ __declspec(dllexport) bool update_movie_sample()
 			}
 		}
 
-		av_free_packet(&packet);
+		av_packet_unref(&packet);
 	}
 
 	if(sound_buffer && first_audio_packet)
