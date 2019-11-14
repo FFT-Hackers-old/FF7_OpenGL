@@ -128,14 +128,8 @@ __declspec(dllexport) void release_movie_objects()
 	uint i;
 
 	if (movie_frame) av_frame_free(&movie_frame);
-	if (codec_ctx) {
-		avcodec_close(codec_ctx);
-		avcodec_free_context(&codec_ctx);
-	}
-	if (acodec_ctx) {
-		avcodec_close(acodec_ctx);
-		avcodec_free_context(&acodec_ctx);
-	}
+	if (codec_ctx) avcodec_close(codec_ctx);
+	if (acodec_ctx) avcodec_close(acodec_ctx);
 	if (format_ctx) avformat_close_input(&format_ctx);
 	if (sound_buffer && *directsound) IDirectSoundBuffer_Release(sound_buffer);
 
