@@ -691,7 +691,7 @@ bool load_external_texture(struct texture_set *texture_set, struct tex_header *t
 			gl_set->force_zsort = true;
 		}
 
-		if(!strnicmp(VREF(tex_header, file.pc_name), "menu/btl_win", strlen("menu/btl_win") - 1)) gl_set->force_zsort = true;
+		//if(!strnicmp(VREF(tex_header, file.pc_name), "menu/btl_win", strlen("menu/btl_win") - 1)) gl_set->force_zsort = true;
 
 		if(!strnicmp(VREF(tex_header, file.pc_name), "flevel/hand_1", strlen("flevel/hand_1") - 1)) gl_set->force_filter = true;
 	}
