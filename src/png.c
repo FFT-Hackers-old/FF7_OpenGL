@@ -37,7 +37,7 @@ void _png_error(png_structp png_ptr, const char *error)
 
 void _png_warning(png_structp png_ptr, const char *warning)
 {
-	error("libpng warning: %s\n", warning);
+	info("libpng warning: %s\n", warning);
 }
 
 bool write_png(char *filename, uint width, uint height, char *data)
@@ -61,9 +61,6 @@ bool write_png(char *filename, uint width, uint height, char *data)
 		fclose(f);
 		return false;
 	}
-
-	// Relax LibPNG sRGB profile checks
-	png_set_option(png_ptr, PNG_SKIP_sRGB_CHECK_PROFILE, PNG_OPTION_ON);
 	
 	info_ptr = png_create_info_struct(png_ptr);
 	
@@ -125,9 +122,6 @@ uint *read_png(char *filename, uint *_width, uint *_height)
 		fclose(f);
 		return 0;
 	}
-
-	// Relax LibPNG sRGB profile checks
-	png_set_option(png_ptr, PNG_SKIP_sRGB_CHECK_PROFILE, PNG_OPTION_ON);
 
 	info_ptr = png_create_info_struct(png_ptr);
 
