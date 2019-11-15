@@ -427,7 +427,7 @@ __declspec(dllexport) bool update_movie_sample()
 				{
 					skipped_frames++;
 					if(((skipped_frames - 1) & skipped_frames) == 0) glitch("video playback is lagging behind, skipping frames (frame #: %i, skipped: %i, lag: %f)\n", movie_frame_counter, skipped_frames, LAG);
-					av_free_packet(&packet);
+					av_packet_unref(&packet);
 					if(use_bgra_texture) draw_bgra_frame(vbuffer_read);
 					else draw_yuv_frame(vbuffer_read, codec_ctx->color_range == AVCOL_RANGE_JPEG);
 					break;
@@ -454,7 +454,7 @@ __declspec(dllexport) bool update_movie_sample()
 				else if(use_bgra_texture) buffer_bgra_frame(movie_frame->extended_data[0], movie_frame->linesize[0]);
 				else buffer_yuv_frame(movie_frame->extended_data, movie_frame->linesize);
 
-				av_free_packet(&packet);
+				av_packet_unref(&packet);
 
 				if(vbuffer_write == vbuffer_read)
 				{
@@ -517,9 +517,13 @@ __declspec(dllexport) bool update_movie_sample()
 						if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("couldn't unlock sound buffer\n");
 
 						write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
+
+						av_freep(&buffer);
 					}
 				}
 			}
+
+			av_packet_unref(&packet);
 		}
 
 		av_packet_unref(&packet);
