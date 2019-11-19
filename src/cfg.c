@@ -22,9 +22,9 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <confuse.h>
 
 #include "types.h"
-#include "3rdparty/confuse.h"
 #include "log.h"
 #include "globals.h"
 #include "compile_cfg.h"

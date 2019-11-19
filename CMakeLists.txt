@@ -34,6 +34,7 @@ if (SUPERBUILD)
 		glew
 		zlib
 		libpng
+		libconfuse
 		ffmpeg
 		vgmstream
 	)
