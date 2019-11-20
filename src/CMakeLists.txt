@@ -1,6 +1,7 @@
 find_package(GLEW REQUIRED)
 find_package(ZLib REQUIRED)
 find_package(PNG REQUIRED)
+find_package(CONFUSE REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(VGMSTREAM REQUIRED)
 
@@ -14,7 +15,6 @@ endif()
 file(GLOB source_files "*.h" "*.c")
 
 add_library(ff7_opengl SHARED ${source_files})
-add_subdirectory(3rdparty)
 add_subdirectory(ff7)
 add_subdirectory(gl)
 
@@ -23,6 +23,7 @@ target_link_libraries(ff7_opengl
 	dbghelp
 	GLEW::GLEW
 	PNG::PNG
+	CONFUSE::CONFUSE
 )
 target_compile_options(ff7_opengl
 	PRIVATE /D_CRT_SECURE_NO_WARNINGS
