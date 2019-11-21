@@ -98,11 +98,11 @@ struct ext_cache_data *ext_cache_get(char *name, uint palette_index, int refcoun
 
 		if(ext_cache[i]->palette_index != palette_index) continue;
 
-		if(trace_all) trace("Comparing: %s (%s)\n", ext_cache[i]->name, name);
+		if(trace_all) trace("ext_cache_get: Comparing: %s (%s)\n", ext_cache[i]->name, name);
 
 		if(!_stricmp(ext_cache[i]->name, name))
 		{
-			if(trace_all) trace("Matched: %s\n", ext_cache[i]->name);
+			if(trace_all) trace("ext_cache_get: Matched: %s with palette index %d\n", ext_cache[i]->name, ext_cache[i]->palette_index);
 
 			if(refcount >= 0 || ext_cache[i]->references) ext_cache[i]->references += refcount;
 
