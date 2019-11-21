@@ -96,7 +96,7 @@ void ff7_set_mode_framerate(uint driver_mode, uint framerate)
 {
 	uint i;
 
-	for(i = 0; i < num_modes; i++) if(ff7_modes[i].driver_mode == driver_mode) ff7_modes[i].main_loop = framerate;
+	for(i = 0; i < num_modes; i++) if(ff7_modes[i].driver_mode == driver_mode) ff7_modes[i].framerate = framerate;
 }
 
 void ff7_find_externals()
