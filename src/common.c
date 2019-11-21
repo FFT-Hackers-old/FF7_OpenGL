@@ -181,7 +181,7 @@ struct game_mode *getmode()
 				last_mode = m->mode;
 			}
 
-			trace("getmode: exact match - driver_mode: %u - mode: %u - name: %s\n", m->driver_mode, m->mode, m->name);
+			if (trace_all) trace("getmode: exact match - driver_mode: %u - mode: %u - name: %s\n", m->driver_mode, m->mode, m->name);
 
 			return m;
 		}
@@ -209,14 +209,14 @@ struct game_mode *getmode()
 						if(_m->mode == *common_externals._mode) break;
 					}
 
-					trace("getmode: mismatched mode, %s -> %s\n", _m->name, m->name);
+					if (trace_all) trace("getmode: mismatched mode, %s -> %s\n", _m->name, m->name);
 				}
 #endif
 				if(m->trace) trace("%s\n", m->name);
 				last_mode = m->mode;
 			}
 
-			trace("getmode: no exact match, found by main loop - driver_mode: %u - mode: %u - name: %s\n", m->driver_mode, m->mode, m->name);
+			if (trace_all) trace("getmode: no exact match, found by main loop - driver_mode: %u - mode: %u - name: %s\n", m->driver_mode, m->mode, m->name);
 
 			return m;
 		}
@@ -235,7 +235,7 @@ struct game_mode *getmode()
 				last_mode = m->mode;
 			}
 
-			trace("getmode: ignore main loop, match by mode only - driver_mode: %u - mode: %u - name: %s\n", m->driver_mode, m->mode, m->name);
+			if (trace_all) trace("getmode: ignore main loop, match by mode only - driver_mode: %u - mode: %u - name: %s\n", m->driver_mode, m->mode, m->name);
 
 			return m;
 		}
