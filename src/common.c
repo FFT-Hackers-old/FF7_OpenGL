@@ -500,8 +500,6 @@ void common_clear(bool clear_color, bool clear_depth, bool unknown, struct game_
 	glDepthMask(GL_TRUE);
 	glDisable(GL_SCISSOR_TEST);
 
-	if(mode == MODE_MENU) mask |= GL_COLOR_BUFFER_BIT;
-
 	if(clear_color || mode == MODE_MENU) mask |= GL_COLOR_BUFFER_BIT;
 	if(clear_depth) mask |= GL_DEPTH_BUFFER_BIT;
 
