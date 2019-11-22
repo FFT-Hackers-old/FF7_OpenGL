@@ -2028,6 +2028,7 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 	{
 		if(GLEW_ARB_debug_output)
 		{
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 			glDebugMessageCallbackARB(gldebug_callback, 0);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, true);
 		}
