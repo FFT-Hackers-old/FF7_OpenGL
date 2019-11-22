@@ -112,7 +112,7 @@ __declspec(dllexport) void movie_init(void *plugin_trace, void *plugin_info, voi
 
 	glewInit();
 
-	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &texture_units);
+	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &texture_units);
 
 	if(texture_units < 3) info("No multitexturing, codecs with YUV output will be slow. (texture units: %i)\n", texture_units);
 	else yuv_fast_path = true;
