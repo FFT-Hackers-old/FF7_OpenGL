@@ -487,11 +487,11 @@ void gl_prepare_flip()
 	};
 	word indices[] = {0, 1, 2, 3};
 
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
 	glPushAttrib(GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_VIEWPORT_BIT | GL_COLOR_BUFFER_BIT);
 
 	gl_set_texture(indirect_texture);
-
-	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
 	glDisable(GL_SCISSOR_TEST);
 
