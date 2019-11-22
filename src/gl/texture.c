@@ -205,7 +205,7 @@ void gl_bind_texture_set(struct texture_set *_texture_set)
 // disable texturing entirely
 void gl_set_texture(GLuint texture)
 {
-	if(trace_all) trace("set texture %i\n", texture);
+	if(trace_all) trace("gl_set_texture: set texture %i\n", texture);
 
 	if(texture)
 	{
