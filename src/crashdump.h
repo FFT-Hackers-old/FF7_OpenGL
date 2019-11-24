@@ -27,6 +27,7 @@
 
 #define STACK_MAX_NAME_LENGTH 256
 
+void printStack(CONTEXT* ctx);
 LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep);
 
 #endif

@@ -129,12 +129,12 @@ void printStack(CONTEXT* ctx)
 		//try to get line
 		if (SymGetLineFromAddr64(process, stack.AddrPC.Offset, &disp, line))
 		{
-			error("\tat %s in %s: line: %lu: address: 0x%0X\n", pSymbol->Name, line->FileName, line->LineNumber, pSymbol->Address);
+			trace("\tat %s in %s: line: %lu: address: 0x%0X\n", pSymbol->Name, line->FileName, line->LineNumber, pSymbol->Address);
 		}
 		else
 		{
 			//failed to get line
-			error("\tat %s, address 0x%0X.\n", pSymbol->Name, pSymbol->Address);
+			trace("\tat %s, address 0x%0X.\n", pSymbol->Name, pSymbol->Address);
 			hModule = NULL;
 			lstrcpyA(module, "");
 			GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -143,7 +143,7 @@ void printStack(CONTEXT* ctx)
 			//at least print module name
 			if (hModule != NULL) GetModuleFileNameA(hModule, module, STACK_MAX_NAME_LENGTH);
 
-			error("in %s\n", module);
+			trace("in %s\n", module);
 		}
 
 		free(line);
@@ -154,21 +154,21 @@ void printStack(CONTEXT* ctx)
 LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 {
 	static bool had_exception = false;
-	HMODULE dbghelp;
 	char filename[4096];
 	bool save;
 
 	// give up if we crash again inside the exception handler (this function)
 	if(had_exception)
 	{
+		unexpected("ExceptionHandler: crash while running another ExceptionHandler. Exiting.");
 		SetUnhandledExceptionFilter(0);
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 
-	had_exception = true;
-
-	error("*** Exception 0x%x occured ***\n", ep->ExceptionRecord->ExceptionCode);
+	trace("*** Exception 0x%x occured ***\n", ep->ExceptionRecord->ExceptionCode);
 	printStack(ep->ContextRecord);
+
+	had_exception = true;
 
 	// show cursor in case it was hidden
 	ShowCursor(true);
@@ -213,7 +213,7 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 			NULL, GetLastError(), MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
 			buf, (sizeof(buf) / sizeof(wchar_t)), NULL);
 
-		error("MiniDumpWriteDump failed with error: %ls\n", buf);
+		trace("MiniDumpWriteDump failed with error: %ls\n", buf);
 	}
 
 
@@ -246,7 +246,11 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 		}
 	}
 
-	error("unhandled exception\n");
+#ifdef RELEASE
+	error("Unhandled Exception.\n");
+#else
+	error("Unhandled Exception. See dumped information above.\n");
+#endif
 
 	// let OS handle the crash
 	SetUnhandledExceptionFilter(0);
