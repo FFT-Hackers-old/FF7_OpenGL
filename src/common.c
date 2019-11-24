@@ -1621,33 +1621,40 @@ void qpc_get_time(time_t *dest)
 	stats.timer = *dest;
 }
 
-char *gldebug_sources[] = {
-	"API",
-	"Window System",
-	"Shader Compiler",
-	"Third Party",
-	"Application",
-	"Other",
-};
-
-char *gldebug_types[] = {
-	"Error",
-	"Deprecated Behavior",
-	"Undefined Behavior",
-	"Portability",
-	"Performance",
-	"Other",
-};
-
-char *gldebug_severities[] = {
-	"High",
-	"Medium",
-	"Low",
-};
-
 void APIENTRY gldebug_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam)
 {
-	info("OpenGL debug; Severity: %s, %i %s %s: %s\n", gldebug_severities[severity - GL_DEBUG_SEVERITY_HIGH_ARB], id, gldebug_sources[source - GL_DEBUG_SOURCE_API_ARB], gldebug_types[type - GL_DEBUG_TYPE_ERROR_ARB], message);
+	const char* _source = "Unknown";
+	switch (source) {
+		case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   _source = "WindowSystem";		break;
+		case GL_DEBUG_SOURCE_APPLICATION:     _source = "Application";		break;
+		case GL_DEBUG_SOURCE_API:             _source = "API";				break;
+		case GL_DEBUG_SOURCE_SHADER_COMPILER: _source = "ShaderCompiler";	break;
+		case GL_DEBUG_SOURCE_THIRD_PARTY:     _source = "ThirdParty";		break;
+		case GL_DEBUG_SOURCE_OTHER:           _source = "Other";			break;
+	}
+
+	const char* _type = "Unknown";
+	switch (type) {
+		case GL_DEBUG_TYPE_ERROR:               _type = "Error";			break;
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: _type = "Deprecated";		break;
+		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  _type = "Undefined";		break;
+		case GL_DEBUG_TYPE_PORTABILITY:         _type = "Portability";		break;
+		case GL_DEBUG_TYPE_PERFORMANCE:         _type = "Performance";		break;
+		case GL_DEBUG_TYPE_MARKER:              _type = "Marker";			break;
+		case GL_DEBUG_TYPE_PUSH_GROUP:          _type = "PushGroup";		break;
+		case GL_DEBUG_TYPE_POP_GROUP:           _type = "PopGroup";			break;
+		case GL_DEBUG_TYPE_OTHER:				_type = "Other";			break;
+	}
+
+	const char* _severity = "Unknown";
+	switch (severity) {
+		case GL_DEBUG_SEVERITY_HIGH:         _severity = "High";			break;
+		case GL_DEBUG_SEVERITY_MEDIUM:       _severity = "Medium";			break;
+		case GL_DEBUG_SEVERITY_LOW:          _severity = "Low";				break;
+		case GL_DEBUG_SEVERITY_NOTIFICATION: _severity = "Notification";	break;
+	}
+
+	info("OpenGL debug; Severity: %s, %i %s %s: %s\n", _severity, id, _source, _type, message);
 }
 
 PIXELFORMATDESCRIPTOR pfd = 
@@ -1989,13 +1996,13 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 
 	if(!glewIsSupported("GL_VERSION_2_1"))
 	{
-		info("PBO not supported\n");
+		info("OpenGL 2.1 not available. PBO not supported\n");
 		use_pbo = false;
 	}
 
 	if(use_pbo)
 	{
-		info("Using PBO\n");
+		info("OpenGL 2.1 support detected. Using PBO\n");
 		gl_init_pbo_ring();
 	}
 
