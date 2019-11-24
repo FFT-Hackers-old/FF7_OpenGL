@@ -138,7 +138,7 @@ __declspec(dllexport) void release_movie_objects()
 	format_ctx = 0;
 	sound_buffer = 0;
 
-	if(skipped_frames > 0) info("skipped %i frames\n", skipped_frames);
+	if(skipped_frames > 0) info("release_movie_objects: skipped %i frames\n", skipped_frames);
 	skipped_frames = 0;
 
 	for(i = 0; i < VIDEO_BUFFER_SIZE; i++)
@@ -160,14 +160,14 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 	if(ret = avformat_open_input(&format_ctx, name, NULL, NULL))
 	{
-		error("couldn't open movie file: %s\n", name);
+		error("prepare_movie: couldn't open movie file: %s\n", name);
 		release_movie_objects();
 		goto exit;
 	}
 
 	if(avformat_find_stream_info(format_ctx, NULL) < 0)
 	{
-		error("couldn't find stream info\n");
+		error("prepare_movie: couldn't find stream info\n");
 		release_movie_objects();
 		goto exit;
 	}
@@ -182,19 +182,19 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 	if(videostream == -1)
 	{
-		error("no video stream found\n");
+		error("prepare_movie: no video stream found\n");
 		release_movie_objects();
 		goto exit;
 	}
 
-	if(audiostream == -1) trace("no audio stream found\n");
+	if(audiostream == -1) trace("prepare_movie: no audio stream found\n");
 
 	codec_ctx = format_ctx->streams[videostream]->codec;
 
 	codec = avcodec_find_decoder(codec_ctx->codec_id);
 	if(!codec)
 	{
-		error("no video codec found\n");
+		error("prepare_movie: no video codec found\n");
 		codec_ctx = 0;
 		release_movie_objects();
 		goto exit;
@@ -202,7 +202,7 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 	if(avcodec_open2(codec_ctx, codec, NULL) < 0)
 	{
-		error("couldn't open video codec\n");
+		error("prepare_movie: couldn't open video codec\n");
 		release_movie_objects();
 		goto exit;
 	}
@@ -213,14 +213,14 @@ __declspec(dllexport) uint prepare_movie(char *name)
 		acodec = avcodec_find_decoder(acodec_ctx->codec_id);
 		if(!acodec)
 		{
-			error("no audio codec found\n");
+			error("prepare_movie: no audio codec found\n");
 			release_movie_objects();
 			goto exit;
 		}
 
 		if(avcodec_open2(acodec_ctx, acodec, NULL) < 0)
 		{
-			error("couldn't open audio codec\n");
+			error("prepare_movie: couldn't open audio codec\n");
 			release_movie_objects();
 			goto exit;
 		}
@@ -232,13 +232,13 @@ __declspec(dllexport) uint prepare_movie(char *name)
 	movie_duration = (double)format_ctx->duration / (double)AV_TIME_BASE;
 	movie_frames = (uint)round(movie_fps * movie_duration);
 
-	if(movie_fps < 100.0) info("%s; %s/%s %ix%i, %f FPS, duration: %f, frames: %i\n", name, codec->name, acodec_ctx ? acodec->name : "null", movie_width, movie_height, movie_fps, movie_duration, movie_frames);
+	if(movie_fps < 100.0) info("prepare_movie: %s; %s/%s %ix%i, %f FPS, duration: %f, frames: %i\n", name, codec->name, acodec_ctx ? acodec->name : "null", movie_width, movie_height, movie_fps, movie_duration, movie_frames);
 	// bogus FPS value, assume the codec provides frame limiting
-	else info("%s; %s/%s %ix%i, duration: %f\n", name, codec->name, acodec_ctx ? acodec->name : "null", movie_width, movie_height, movie_duration);
+	else info("prepare_movie: %s; %s/%s %ix%i, duration: %f\n", name, codec->name, acodec_ctx ? acodec->name : "null", movie_width, movie_height, movie_duration);
 
 	if(movie_width > max_texture_size || movie_height > max_texture_size)
 	{
-		error("movie dimensions exceed max texture size, skipping\n");
+		error("prepare_movie: movie dimensions exceed max texture size, skipping\n");
 		release_movie_objects();
 		goto exit;
 	}
@@ -256,13 +256,16 @@ __declspec(dllexport) uint prepare_movie(char *name)
 	if(codec_ctx->pix_fmt != AV_PIX_FMT_BGRA && codec_ctx->pix_fmt != AV_PIX_FMT_BGR24 && (codec_ctx->pix_fmt != AV_PIX_FMT_YUV420P || !yuv_fast_path))
 	{
 		sws_ctx = sws_getContext(movie_width, movie_height, codec_ctx->pix_fmt, movie_width, movie_height, AV_PIX_FMT_BGR24, SWS_FAST_BILINEAR | SWS_ACCURATE_RND, NULL, NULL, NULL);
-		info("slow output format from video codec %s; %i\n", codec->name, codec_ctx->pix_fmt);
+		info("prepare_movie: slow output format from video codec %s; %i\n", codec->name, codec_ctx->pix_fmt);
 	}
 	else sws_ctx = 0;
 
 	if(audiostream != -1)
 	{
-		if (acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) { must_audio_be_converted = true; }
+		if (acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {
+			must_audio_be_converted = true;
+			trace("prepare_movie: Audio must be converted: acodec_ctx->sample_fmt: %d\n", acodec_ctx->sample_fmt);
+		}
 
 		sound_format.cbSize = sizeof(sound_format);
 		sound_format.wBitsPerSample = (must_audio_be_converted ? 16 : acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 8 : 16);
@@ -282,7 +285,7 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 		if(ret = IDirectSound_CreateSoundBuffer(*directsound, (LPCDSBUFFERDESC)&sbdesc, &sound_buffer, 0))
 		{
-			error("couldn't create sound buffer (%i, %i, %i, %i)\n", acodec_ctx->sample_fmt, acodec_ctx->bit_rate, acodec_ctx->sample_rate, acodec_ctx->channels);
+			error("prepare_movie: couldn't create sound buffer (%i, %i, %i, %i)\n", acodec_ctx->sample_fmt, acodec_ctx->bit_rate, acodec_ctx->sample_rate, acodec_ctx->channels);
 			sound_buffer = 0;
 		}
 
@@ -426,7 +429,7 @@ __declspec(dllexport) bool update_movie_sample()
 				if(skipping_frames && LAG > 0.0)
 				{
 					skipped_frames++;
-					if(((skipped_frames - 1) & skipped_frames) == 0) glitch("video playback is lagging behind, skipping frames (frame #: %i, skipped: %i, lag: %f)\n", movie_frame_counter, skipped_frames, LAG);
+					if(((skipped_frames - 1) & skipped_frames) == 0) glitch("update_movie_sample: video playback is lagging behind, skipping frames (frame #: %i, skipped: %i, lag: %f)\n", movie_frame_counter, skipped_frames, LAG);
 					av_packet_unref(&packet);
 					if(use_bgra_texture) draw_bgra_frame(vbuffer_read);
 					else draw_yuv_frame(vbuffer_read, codec_ctx->color_range == AVCOL_RANGE_JPEG);
@@ -434,7 +437,7 @@ __declspec(dllexport) bool update_movie_sample()
 				}
 				else skipping_frames = false;
 
-				if(movie_sync_debug) info("video: DTS %f PTS %f (timebase %f) placed in video buffer at real time %f (play %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(codec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)movie_frame_counter / (double)movie_fps);
+				if(movie_sync_debug) info("update_movie_sample(video): DTS %f PTS %f (timebase %f) placed in video buffer at real time %f (play %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(codec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)movie_frame_counter / (double)movie_fps);
 				
 				if(sws_ctx)
 				{
@@ -484,7 +487,7 @@ __declspec(dllexport) bool update_movie_sample()
 			if(movie_sync_debug)
 			{
 				IDirectSoundBuffer_GetCurrentPosition(sound_buffer, &playcursor, &writecursor);
-				info("audio: DTS %f PTS %f (timebase %f) placed in sound buffer at real time %f (play %f write %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(acodec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)playcursor / (double)bytespersec, (double)write_pointer / (double)bytespersec);
+				info("update_movie_sample(audio): DTS %f PTS %f (timebase %f) placed in sound buffer at real time %f (play %f write %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(acodec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)playcursor / (double)bytespersec, (double)write_pointer / (double)bytespersec);
 			}
 
 			while (packet_size > 0)
@@ -493,7 +496,7 @@ __declspec(dllexport) bool update_movie_sample()
 
 				if (used_bytes < 0)
 				{
-					error("ffmpeg_movies: avcodec_decode_audio4() failed, code %d\n", used_bytes);
+					error("update_movie_sample: avcodec_decode_audio4() failed, code %d\n", used_bytes);
 					break;
 				}
 
@@ -511,10 +514,10 @@ __declspec(dllexport) bool update_movie_sample()
 					uint bytes2;
 
 					if (sound_buffer) {
-						if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("couldn't lock sound buffer\n");
+						if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("update_movie_sample: couldn't lock sound buffer\n");
 						memcpy(ptr1, buffer, bytes1);
 						memcpy(ptr2, &buffer[bytes1], bytes2);
-						if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("couldn't unlock sound buffer\n");
+						if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("update_movie_sample: couldn't unlock sound buffer\n");
 
 						write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
 
@@ -535,7 +538,7 @@ __declspec(dllexport) bool update_movie_sample()
 
 		// reset start time so video syncs up properly
 		QueryPerformanceCounter((LARGE_INTEGER *)&start_time);
-		if(IDirectSoundBuffer_Play(sound_buffer, 0, 0, DSBPLAY_LOOPING)) error("couldn't play sound buffer\n");
+		if(IDirectSoundBuffer_Play(sound_buffer, 0, 0, DSBPLAY_LOOPING)) error("update_movie_sample: couldn't play sound buffer\n");
 		first_audio_packet = false;
 	}
 
