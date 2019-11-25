@@ -46,6 +46,8 @@ void plugin_trace(const char *fmt, ...)
 
 	vsnprintf(tmp_str, sizeof(tmp_str), fmt, args);
 
+	va_end(args);
+
 	trace("%s", tmp_str);
 }
 
@@ -57,6 +59,8 @@ void plugin_info(const char *fmt, ...)
 	va_start(args, fmt);
 
 	vsnprintf(tmp_str, sizeof(tmp_str), fmt, args);
+
+	va_end(args);
 
 	info("%s", tmp_str);
 }
@@ -70,6 +74,8 @@ void plugin_glitch(const char *fmt, ...)
 
 	vsnprintf(tmp_str, sizeof(tmp_str), fmt, args);
 
+	va_end(args);
+
 	glitch("%s", tmp_str);
 }
 
@@ -81,6 +87,8 @@ void plugin_error(const char *fmt, ...)
 	va_start(args, fmt);
 
 	vsnprintf(tmp_str, sizeof(tmp_str), fmt, args);
+
+	va_end(args);
 
 	error("%s", tmp_str);
 }
@@ -122,6 +130,9 @@ void external_debug_print2(const char *fmt, ...)
 	va_start(args, fmt);
 
 	vsnprintf(tmp_str, sizeof(tmp_str), fmt, args);
+
+	va_end(args);
+
 	external_debug_print(tmp_str);
 }
 
@@ -136,6 +147,9 @@ void debug_printf(const char *prefix, bool popup, uint color, const char *fmt, .
 	va_start(args, fmt);
 
 	vsnprintf(tmp_str, sizeof(tmp_str), fmt, args);
+
+	va_end(args);
+
 	_snprintf(tmp_str2, sizeof(tmp_str2), "%s: %s", prefix, tmp_str);
 	debug_print(tmp_str2);
 
