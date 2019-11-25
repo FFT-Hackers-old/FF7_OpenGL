@@ -39,6 +39,7 @@ add_library(ffmpeg_movies SHARED)
 target_include_directories(ffmpeg_movies PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
 add_subdirectory(ffmpeg_movies)
 target_link_libraries(ffmpeg_movies
+	dbghelp
 	GLEW::GLEW
 	FFMPEG::AVUtil
 	FFMPEG::SWResample

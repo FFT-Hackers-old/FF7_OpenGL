@@ -8,6 +8,7 @@
 #include <math.h>
 #include <sys/timeb.h>
 #include <dsound.h>
+#include <dbghelp.h>
 
 #include "types.h"
 
@@ -19,6 +20,8 @@
 
 #define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000
 
+#define STACK_MAX_NAME_LENGTH 256
+
 inline double round(double x) { return floor(x + 0.5); }
 
 #define LAG (((now - start_time) - (timer_freq / movie_fps) * movie_frame_counter) / (timer_freq / 1000))
@@ -28,7 +31,7 @@ uint texture_units = 1;
 bool yuv_init_done = false;
 bool yuv_fast_path = false;
 
-bool must_audio_be_converted = false;
+bool audio_must_be_converted = false;
 
 AVFormatContext *format_ctx = 0;
 AVCodecContext *codec_ctx = 0;
@@ -37,7 +40,7 @@ AVCodecContext *acodec_ctx = 0;
 AVCodec *acodec = 0;
 AVFrame *movie_frame = 0;
 struct SwsContext *sws_ctx = 0;
-SwrContext* swr_ctx;
+SwrContext* swr_ctx = NULL;
 
 int videostream;
 int audiostream;
@@ -93,9 +96,132 @@ BOOL APIENTRY DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
 	return TRUE;
 }
 
+// Prints stack trace based on context record
+// Via https://stackoverflow.com/a/50208684
+void printStack(CONTEXT* ctx)
+{
+	BOOL    result;
+	HANDLE  process;
+	HANDLE  thread;
+	HMODULE hModule;
+
+	STACKFRAME64        stack;
+	ULONG               frame;
+	DWORD64             displacement;
+
+	DWORD disp;
+	IMAGEHLP_LINE64* line;
+
+	char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+	char name[STACK_MAX_NAME_LENGTH];
+	char module[STACK_MAX_NAME_LENGTH];
+	PSYMBOL_INFO pSymbol = (PSYMBOL_INFO)buffer;
+
+	memset(&stack, 0, sizeof(STACKFRAME64));
+
+	process = GetCurrentProcess();
+	thread = GetCurrentThread();
+	displacement = 0;
+#if !defined(_M_AMD64)
+	stack.AddrPC.Offset = (*ctx).Eip;
+	stack.AddrPC.Mode = AddrModeFlat;
+	stack.AddrStack.Offset = (*ctx).Esp;
+	stack.AddrStack.Mode = AddrModeFlat;
+	stack.AddrFrame.Offset = (*ctx).Ebp;
+	stack.AddrFrame.Mode = AddrModeFlat;
+#endif
+
+	SymInitialize(process, NULL, TRUE); //load symbols
+
+	for (frame = 0; ; frame++)
+	{
+		//get next call from stack
+		result = StackWalk64
+		(
+#if defined(_M_AMD64)
+			IMAGE_FILE_MACHINE_AMD64
+#else
+			IMAGE_FILE_MACHINE_I386
+#endif
+			,
+			process,
+			thread,
+			&stack,
+			ctx,
+			NULL,
+			SymFunctionTableAccess64,
+			SymGetModuleBase64,
+			NULL
+		);
+
+		if (!result) break;
+
+		//get symbol name for address
+		pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+		pSymbol->MaxNameLen = MAX_SYM_NAME;
+		SymFromAddr(process, (ULONG64)stack.AddrPC.Offset, &displacement, pSymbol);
+
+		line = (IMAGEHLP_LINE64*)malloc(sizeof(IMAGEHLP_LINE64));
+		line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+
+		//try to get line
+		if (SymGetLineFromAddr64(process, stack.AddrPC.Offset, &disp, line))
+		{
+			trace("\tat %s in %s: line: %lu: address: 0x%0X\n", pSymbol->Name, line->FileName, line->LineNumber, pSymbol->Address);
+		}
+		else
+		{
+			//failed to get line
+			trace("\tat %s, address 0x%0X.\n", pSymbol->Name, pSymbol->Address);
+			hModule = NULL;
+			lstrcpyA(module, "");
+			GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+				(LPCTSTR)(stack.AddrPC.Offset), &hModule);
+
+			//at least print module name
+			if (hModule != NULL) GetModuleFileNameA(hModule, module, STACK_MAX_NAME_LENGTH);
+
+			trace("in %s\n", module);
+		}
+
+		free(line);
+		line = NULL;
+	}
+}
+
+void ffmpeg_log_callback(void* ptr, int level, const char* fmt, va_list vargs)
+{
+	switch (level) {
+		case AV_LOG_VERBOSE:
+		case AV_LOG_DEBUG: trace(fmt, vargs); break;
+		case AV_LOG_INFO:
+		case AV_LOG_WARNING: info(fmt, vargs); break;
+		case AV_LOG_ERROR:
+		case AV_LOG_FATAL:
+		case AV_LOG_PANIC: error(fmt, vargs); break;
+	}
+
+	if (level <= AV_LOG_WARNING) {
+		CONTEXT ctx;
+
+		ctx.ContextFlags = CONTEXT_CONTROL;
+
+		if (
+			GetThreadContext(
+				GetCurrentThread(),
+				&ctx
+			)
+			)
+			printStack(&ctx);
+	}
+}
+
 __declspec(dllexport) void movie_init(void *plugin_trace, void *plugin_info, void *plugin_glitch, void *plugin_error, void *plugin_draw_movie_quad_bgra, void *plugin_draw_movie_quad_yuv, IDirectSound **plugin_directsound, bool plugin_skip_frames, bool plugin_movie_sync_debug)
 {
 	av_register_all();
+
+	av_log_set_level(AV_LOG_VERBOSE);
+	av_log_set_callback(ffmpeg_log_callback);
 
 	trace = plugin_trace;
 	info = plugin_info;
@@ -263,12 +389,22 @@ __declspec(dllexport) uint prepare_movie(char *name)
 	if(audiostream != -1)
 	{
 		if (acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {
-			must_audio_be_converted = true;
+			audio_must_be_converted = true;
 			trace("prepare_movie: Audio must be converted: acodec_ctx->sample_fmt: %d\n", acodec_ctx->sample_fmt);
+
+			// Prepare software conversion context
+			swr_ctx = swr_alloc();
+			av_opt_set_channel_layout(swr_ctx, "in_channel_layout", acodec_ctx->channel_layout, 0);
+			av_opt_set_channel_layout(swr_ctx, "out_channel_layout", acodec_ctx->channel_layout, 0);
+			av_opt_set_int(swr_ctx, "in_sample_rate", acodec_ctx->sample_rate, 0);
+			av_opt_set_int(swr_ctx, "out_sample_rate", acodec_ctx->sample_rate, 0);
+			av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", acodec_ctx->sample_fmt, 0);
+			av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
+			swr_init(swr_ctx);
 		}
 
 		sound_format.cbSize = sizeof(sound_format);
-		sound_format.wBitsPerSample = (must_audio_be_converted ? 16 : acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 8 : 16);
+		sound_format.wBitsPerSample = (audio_must_be_converted ? 16 : acodec_ctx->bits_per_coded_sample);
 		sound_format.nChannels = acodec_ctx->channels;
 		sound_format.nSamplesPerSec = acodec_ctx->sample_rate;
 		sound_format.nBlockAlign = sound_format.nChannels * sound_format.wBitsPerSample / 8;
@@ -291,15 +427,6 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 		first_audio_packet = true;
 		write_pointer = 0;
-
-		swr_ctx = swr_alloc();
-		av_opt_set_channel_layout(swr_ctx, "in_channel_layout", acodec_ctx->channel_layout, 0);
-		av_opt_set_channel_layout(swr_ctx, "out_channel_layout", acodec_ctx->channel_layout, 0);
-		av_opt_set_int(swr_ctx, "in_sample_rate", acodec_ctx->sample_rate, 0);
-		av_opt_set_int(swr_ctx, "out_sample_rate", acodec_ctx->sample_rate, 0);
-		av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", AV_SAMPLE_FMT_FLTP, 0);
-		av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
-		swr_init(swr_ctx);
 	}
 
 exit:
@@ -480,7 +607,8 @@ __declspec(dllexport) bool update_movie_sample()
 			uint packet_size = packet.size;
 			uint playcursor;
 			uint writecursor;
-			uint bytespersec = (must_audio_be_converted ? 1 : (acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2)) * acodec_ctx->channels * acodec_ctx->sample_rate;
+			uint bytesperpacket = audio_must_be_converted ? 2 : (acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2);
+			uint bytespersec = bytesperpacket * acodec_ctx->channels * acodec_ctx->sample_rate;
 
 			QueryPerformanceCounter((LARGE_INTEGER *)&now);
 
@@ -504,14 +632,16 @@ __declspec(dllexport) bool update_movie_sample()
 				packet_size -= used_bytes;
 
 				if (frame_finished) {
-					av_samples_alloc(&buffer, NULL, acodec_ctx->channels, movie_frame->nb_samples, AV_SAMPLE_FMT_S16, 0);
-					swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->extended_data, movie_frame->nb_samples);
-					int _size = 2 * movie_frame->nb_samples * movie_frame->channels;
+					int _size = bytesperpacket * movie_frame->nb_samples * movie_frame->channels;
 
 					char* ptr1;
 					char* ptr2;
 					uint bytes1;
 					uint bytes2;
+
+					av_samples_alloc(&buffer, movie_frame->linesize, acodec_ctx->channels, movie_frame->nb_samples, (audio_must_be_converted ? AV_SAMPLE_FMT_S16 : acodec_ctx->sample_fmt), 0);
+					if (audio_must_be_converted) swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->extended_data, movie_frame->nb_samples);
+					else av_samples_copy(&buffer, movie_frame->extended_data, 0, 0, movie_frame->nb_samples, acodec_ctx->channels, acodec_ctx->sample_fmt);
 
 					if (sound_buffer) {
 						if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("update_movie_sample: couldn't lock sound buffer\n");
