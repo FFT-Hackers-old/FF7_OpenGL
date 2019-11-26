@@ -29,6 +29,7 @@ target_compile_options(ff7_opengl
 	PRIVATE /D_CRT_SECURE_NO_WARNINGS
 	PRIVATE /D${RELEASE_TYPE}
 )
+target_link_options(ff7_opengl PRIVATE /PDBALTPATH:ff7_opengl.pdb)
 if(_DLL_VERSION)
 	target_compile_options(ff7_opengl PRIVATE /DVERSION="${_DLL_VERSION}")
 endif()
@@ -48,6 +49,7 @@ target_link_libraries(ffmpeg_movies
 	FFMPEG::SWScale
 )
 target_compile_options(ffmpeg_movies PRIVATE /D_CRT_SECURE_NO_WARNINGS)
+target_link_options(ffmpeg_movies PRIVATE /PDBALTPATH:ffmpeg_movies.pdb)
 set_target_properties(ffmpeg_movies PROPERTIES PREFIX "")
 set_target_properties(ffmpeg_movies PROPERTIES SUFFIX ".fgp")
 
@@ -58,6 +60,7 @@ target_link_libraries(vgmstream_music
 	VGMSTREAM::VGMSTREAM
 )
 target_compile_options(vgmstream_music PRIVATE /D_CRT_SECURE_NO_WARNINGS)
+target_link_options(vgmstream_music PRIVATE /PDBALTPATH:vgmstream_music.pdb)
 set_target_properties(vgmstream_music PROPERTIES PREFIX "")
 set_target_properties(vgmstream_music PROPERTIES SUFFIX ".fgp")
 
@@ -65,6 +68,7 @@ add_library(ff7music SHARED)
 target_include_directories(ff7music PRIVATE "${CMAKE_BINARY_DIR}/vendor/include")
 add_subdirectory(ff7music)
 target_compile_options(ff7music PRIVATE /D_CRT_SECURE_NO_WARNINGS)
+target_link_options(ff7music PRIVATE /PDBALTPATH:ff7music.pdb)
 set_target_properties(ff7music PROPERTIES PREFIX "")
 set_target_properties(ff7music PROPERTIES SUFFIX ".fgp")
 
