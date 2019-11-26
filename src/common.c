@@ -1656,8 +1656,8 @@ void APIENTRY gldebug_callback(GLenum source, GLenum type, GLuint id, GLenum sev
 
 	info("OpenGL debug; Severity: %s, %i %s %s: %s\n", _severity, id, _source, _type, message);
 
-	// Print stack trace if severity >= Medium
-	if (severity == GL_DEBUG_SEVERITY_MEDIUM || severity == GL_DEBUG_SEVERITY_HIGH) {
+	// Print stack trace only on errors
+	if (severity == GL_DEBUG_SEVERITY_HIGH) {
 		CONTEXT ctx;
 		
 		ctx.ContextFlags = CONTEXT_CONTROL;
