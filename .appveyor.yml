@@ -20,7 +20,8 @@ configuration:
 
 # Default environment variables
 environment:
-  IS_BUILD_CANARY: false
+  _IS_BUILD_CANARY: false
+  _RELEASE_NAME: FF7OpenGL
 
 # Prepare Cpp environment
 before_build:
@@ -29,9 +30,11 @@ before_build:
   - ps: |
       if ($env:APPVEYOR_REPO_TAG -eq "true" -and $env:APPVEYOR_REPO_TAG_NAME) {
         $env:APPVEYOR_BUILD_VERSION = $env:APPVEYOR_BUILD_VERSION.Substring(0,$env:APPVEYOR_BUILD_VERSION.LastIndexOf('.')) + ".0"
+        $env:_RELEASE_NAME = $env:_RELEASE_NAME + "-v" + $env:APPVEYOR_BUILD_VERSION
       } else {
+        $env:_RELEASE_NAME = $env:_RELEASE_NAME + "-Canary"
         $env:APPVEYOR_REPO_TAG_NAME = "canary"
-        $env:IS_BUILD_CANARY = "true"
+        $env:_IS_BUILD_CANARY = "true"
       }
 
 for:
@@ -62,10 +65,10 @@ test: off
 # Package artifacts
 artifacts:
   - path: .dist\build\x86-RelWithDebInfo\bin
-    name: FF7OpenGL-v${appveyor_build_version}_debug
+    name: ${_RELEASE_NAME}_debug
     type: zip
   - path: .dist\build\x86-Release\bin
-    name: FF7OpenGL-v${appveyor_build_version}
+    name: ${_RELEASE_NAME}
     type: zip
 
 # Create a GitHub release for every tag
@@ -73,22 +76,22 @@ deploy:
   # Deploy only when new tags are pushed
   - provider: GitHub
     tag: ${appveyor_repo_tag_name}
-    release: FF7OpenGL-v${appveyor_build_version}
-    artifact: FF7OpenGL-v${appveyor_build_version}_debug,FF7OpenGL-v${appveyor_build_version}
+    release: ${_RELEASE_NAME}
+    artifact: ${_RELEASE_NAME}_debug,${_RELEASE_NAME}
     auth_token:
       secure: SXUyBqg8+wl9fn3xHV2Br0xDH65EyPAnFwJbwcg94wIesv9osQEefC3zxu9iDTUh
     on:
-      IS_BUILD_CANARY: false
+      _IS_BUILD_CANARY: false
   # Deploy on each commit
   - provider: GitHub
     tag: ${appveyor_repo_tag_name}
-    release: FF7OpenGL-v${appveyor_build_version}
-    artifact: FF7OpenGL-v${appveyor_build_version}_debug,FF7OpenGL-v${appveyor_build_version}
+    release: ${_RELEASE_NAME} v${appveyor_build_version}
+    artifact: ${_RELEASE_NAME}_debug,${_RELEASE_NAME}
     prerelease: true
     force_update: true
     auth_token:
       secure: SXUyBqg8+wl9fn3xHV2Br0xDH65EyPAnFwJbwcg94wIesv9osQEefC3zxu9iDTUh
     on:
-      IS_BUILD_CANARY: true
+      _IS_BUILD_CANARY: true
     description: |
       This is a canary build. Please be aware it may be prone to crashing and is NOT tested by anyone. Use this build AT YOUR OWN RISK!
