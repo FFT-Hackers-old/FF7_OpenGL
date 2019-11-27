@@ -23,6 +23,9 @@
 #ifndef _DEFS_H_
 #define _DEFS_H_
 
+// cd check
+uint get_inserted_cd(void);
+
 // battle
 void magic_thread_start(void (*func)());
 

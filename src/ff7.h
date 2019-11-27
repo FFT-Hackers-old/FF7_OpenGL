@@ -1432,6 +1432,8 @@ struct ff7_externals
 	uint midi_fix;
 	void *snowboard_fix;
 	uint cdcheck;
+	uint get_inserted_cd_sub;
+	uint requiredCD;
 	struct movie_obj *movie_object;
 	void (*movie_sub_415231)(char *);
 	void (*sub_665D9A)(struct matrix *, struct nvertex *, struct indexed_primitive *, struct p_hundred *, struct struc_186 *, struct ff7_game_obj *);
