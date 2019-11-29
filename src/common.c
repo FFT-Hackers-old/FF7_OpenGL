@@ -1717,8 +1717,10 @@ bool init_opengl()
 			wglMakeCurrent(hDC, hRC);
 
 			glewInit();
+
+			info("OpenGL debug context created.");
 		}
-		else info("could not create debug context\n");
+		else info("OpenGL debug context could not be created.\n");
 	}
 
 	info("%s %s %s\n", glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION));
@@ -2051,8 +2053,9 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 			glDebugMessageCallbackARB(gldebug_callback, 0);
 			glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, 0, true);
+			info("OpenGL debugging supported.\n");
 		}
-		else info("OpenGL debugging not supported\n");
+		else info("OpenGL debugging not supported.\n");
 	}
 
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max_texture_size);
