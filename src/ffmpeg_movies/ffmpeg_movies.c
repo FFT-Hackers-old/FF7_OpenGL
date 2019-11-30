@@ -393,6 +393,9 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 	if(audiostream != -1)
 	{
+		// reset flag if was previously set
+		audio_must_be_converted = false;
+
 		if (acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {
 			audio_must_be_converted = true;
 			trace("prepare_movie: Audio must be converted: acodec_ctx->sample_fmt: %d\n", acodec_ctx->sample_fmt);
