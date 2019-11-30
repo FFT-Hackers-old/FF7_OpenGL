@@ -1718,7 +1718,7 @@ bool init_opengl()
 
 			glewInit();
 
-			info("OpenGL debug context created.");
+			info("OpenGL debug context created.\n");
 		}
 		else info("OpenGL debug context could not be created.\n");
 	}
