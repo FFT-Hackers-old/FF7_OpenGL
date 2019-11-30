@@ -1654,7 +1654,7 @@ void APIENTRY gldebug_callback(GLenum source, GLenum type, GLuint id, GLenum sev
 		case GL_DEBUG_SEVERITY_NOTIFICATION: _severity = "Notification";	break;
 	}
 
-	info("OpenGL debug; Severity: %s, %i %s %s: %s\n", _severity, id, _source, _type, message);
+	trace("OpenGL debug: Severity %s, %i %s %s: %s\n", _severity, id, _source, _type, message);
 
 	// Print stack trace only on errors
 	if (severity == GL_DEBUG_SEVERITY_HIGH) {
