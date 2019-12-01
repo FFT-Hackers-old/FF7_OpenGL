@@ -263,11 +263,17 @@ __declspec(dllexport) void release_movie_objects()
 	if (acodec_ctx) avcodec_close(acodec_ctx);
 	if (format_ctx) avformat_close_input(&format_ctx);
 	if (sound_buffer && *directsound) IDirectSoundBuffer_Release(sound_buffer);
+	if (swr_ctx) {
+		swr_close(swr_ctx);
+		swr_free(&swr_ctx);
+	}
 
 	codec_ctx = 0;
 	acodec_ctx = 0;
 	format_ctx = 0;
 	sound_buffer = 0;
+	
+	audio_must_be_converted = false;
 
 	if(skipped_frames > 0) info("release_movie_objects: skipped %i frames\n", skipped_frames);
 	skipped_frames = 0;
@@ -393,21 +399,29 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 	if(audiostream != -1)
 	{
-		// reset flag if was previously set
-		audio_must_be_converted = false;
-
 		if (acodec_ctx->sample_fmt != AV_SAMPLE_FMT_U8 && acodec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {
 			audio_must_be_converted = true;
-			trace("prepare_movie: Audio must be converted: acodec_ctx->sample_fmt: %d\n", acodec_ctx->sample_fmt);
+			trace("prepare_movie: Audio must be converted: IN acodec_ctx->sample_fmt: %s\n", av_get_sample_fmt_name(acodec_ctx->sample_fmt));
+			trace("prepare_movie: Audio must be converted: IN acodec_ctx->sample_rate: %d\n", acodec_ctx->sample_rate);
+			trace("prepare_movie: Audio must be converted: IN acodec_ctx->channel_layout: %u\n", acodec_ctx->channel_layout);
 
 			// Prepare software conversion context
-			swr_ctx = swr_alloc();
-			av_opt_set_channel_layout(swr_ctx, "in_channel_layout", acodec_ctx->channel_layout, 0);
-			av_opt_set_channel_layout(swr_ctx, "out_channel_layout", acodec_ctx->channel_layout, 0);
-			av_opt_set_int(swr_ctx, "in_sample_rate", acodec_ctx->sample_rate, 0);
-			av_opt_set_int(swr_ctx, "out_sample_rate", acodec_ctx->sample_rate, 0);
-			av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", acodec_ctx->sample_fmt, 0);
-			av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
+			swr_ctx = swr_alloc_set_opts(
+				// Create a new context
+				NULL,
+				// OUT
+				acodec_ctx->channel_layout,
+				AV_SAMPLE_FMT_S16,
+				acodec_ctx->sample_rate,
+				// IN
+				acodec_ctx->channel_layout,
+				acodec_ctx->sample_fmt,
+				acodec_ctx->sample_rate,
+				// LOG
+				0,
+				NULL
+			);
+
 			swr_init(swr_ctx);
 		}
 
