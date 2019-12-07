@@ -437,7 +437,7 @@ __declspec(dllexport) uint prepare_movie(char *name)
 
 		sbdesc.dwSize = sizeof(sbdesc);
 		sbdesc.lpwfxFormat = &sound_format;
-		sbdesc.dwFlags = 0;
+		sbdesc.dwFlags = DSBCAPS_GLOBALFOCUS | DSBCAPS_CTRLVOLUME;
 		sbdesc.dwReserved = 0;
 		sbdesc.dwBufferBytes = sound_buffer_size;
 
@@ -552,6 +552,7 @@ __declspec(dllexport) bool update_movie_sample()
 	bool frame_finished;
 	int ret;
 	time_t now;
+	DWORD DSStatus;
 
 	// no playable movie loaded, skip it
 	if(!format_ctx) return false;
@@ -666,13 +667,16 @@ __declspec(dllexport) bool update_movie_sample()
 					else av_samples_copy(&buffer, movie_frame->extended_data, 0, 0, movie_frame->nb_samples, acodec_ctx->channels, acodec_ctx->sample_fmt);
 
 					if (sound_buffer) {
-						if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("update_movie_sample: couldn't lock sound buffer\n");
-						memcpy(ptr1, buffer, bytes1);
-						memcpy(ptr2, &buffer[bytes1], bytes2);
-						if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("update_movie_sample: couldn't unlock sound buffer\n");
-
+						if (IDirectSoundBuffer_GetStatus(sound_buffer, &DSStatus) == DS_OK) {
+							if (DSStatus != DSBSTATUS_BUFFERLOST) {
+								if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("update_movie_sample: couldn't lock sound buffer\n");
+								memcpy(ptr1, buffer, bytes1);
+								memcpy(ptr2, &buffer[bytes1], bytes2);
+								if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("update_movie_sample: couldn't unlock sound buffer\n");
+							}
+						}
+						
 						write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
-
 						av_freep(&buffer);
 					}
 				}
@@ -690,7 +694,12 @@ __declspec(dllexport) bool update_movie_sample()
 
 		// reset start time so video syncs up properly
 		QueryPerformanceCounter((LARGE_INTEGER *)&start_time);
-		if(IDirectSoundBuffer_Play(sound_buffer, 0, 0, DSBPLAY_LOOPING)) error("update_movie_sample: couldn't play sound buffer\n");
+		if (IDirectSoundBuffer_GetStatus(sound_buffer, &DSStatus) == DS_OK) {
+			if (DSStatus != DSBSTATUS_BUFFERLOST) {
+				if (IDirectSoundBuffer_Play(sound_buffer, 0, 0, DSBPLAY_LOOPING)) error("update_movie_sample: couldn't play sound buffer\n");
+			}
+		}
+		
 		first_audio_packet = false;
 	}
 
