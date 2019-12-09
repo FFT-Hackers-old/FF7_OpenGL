@@ -83,3 +83,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInf
 	install(FILES $<TARGET_PDB_FILE:vgmstream_music> DESTINATION bin/plugins OPTIONAL)
 	install(FILES $<TARGET_PDB_FILE:ff7music> DESTINATION bin/plugins OPTIONAL)
 endif()
+
+install(FILES ../misc/ff7_opengl_${RELEASE_TYPE}.cfg DESTINATION bin OPTIONAL RENAME ff7_opengl.cfg)
+install(FILES ../misc/ff7_opengl.reg DESTINATION bin OPTIONAL)
