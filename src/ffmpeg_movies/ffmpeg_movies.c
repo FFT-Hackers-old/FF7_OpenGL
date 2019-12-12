@@ -100,88 +100,82 @@ BOOL APIENTRY DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
 // Via https://stackoverflow.com/a/50208684
 void printStack(CONTEXT* ctx)
 {
-	BOOL    result;
-	HANDLE  process;
-	HANDLE  thread;
+	BOOL result;
+	HANDLE process;
+	HANDLE thread;
 	HMODULE hModule;
 
-	STACKFRAME64        stack;
-	ULONG               frame;
-	DWORD64             displacement;
+	STACKFRAME stack;
+	ULONG frame;
+	DWORD64 displacement;
 
 	DWORD disp;
-	IMAGEHLP_LINE64* line;
+	IMAGEHLP_LINE* line;
 
 	char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
 	char name[STACK_MAX_NAME_LENGTH];
 	char module[STACK_MAX_NAME_LENGTH];
 	PSYMBOL_INFO pSymbol = (PSYMBOL_INFO)buffer;
 
-	memset(&stack, 0, sizeof(STACKFRAME64));
+	memset(&stack, 0, sizeof(STACKFRAME));
 
 	process = GetCurrentProcess();
 	thread = GetCurrentThread();
 	displacement = 0;
-#if !defined(_M_AMD64)
 	stack.AddrPC.Offset = (*ctx).Eip;
 	stack.AddrPC.Mode = AddrModeFlat;
 	stack.AddrStack.Offset = (*ctx).Esp;
 	stack.AddrStack.Mode = AddrModeFlat;
 	stack.AddrFrame.Offset = (*ctx).Ebp;
 	stack.AddrFrame.Mode = AddrModeFlat;
-#endif
 
 	SymInitialize(process, NULL, TRUE); //load symbols
 
-	for (frame = 0; ; frame++)
+	for (frame = 0;; frame++)
 	{
 		//get next call from stack
-		result = StackWalk64
-		(
-#if defined(_M_AMD64)
-			IMAGE_FILE_MACHINE_AMD64
-#else
-			IMAGE_FILE_MACHINE_I386
-#endif
-			,
+		result = StackWalk(
+			IMAGE_FILE_MACHINE_I386,
 			process,
 			thread,
 			&stack,
 			ctx,
 			NULL,
-			SymFunctionTableAccess64,
-			SymGetModuleBase64,
-			NULL
-		);
+			SymFunctionTableAccess,
+			SymGetModuleBase,
+			NULL);
 
-		if (!result) break;
+		if (!result)
+			break;
 
 		//get symbol name for address
 		pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO);
 		pSymbol->MaxNameLen = MAX_SYM_NAME;
 		SymFromAddr(process, (ULONG64)stack.AddrPC.Offset, &displacement, pSymbol);
 
-		line = (IMAGEHLP_LINE64*)malloc(sizeof(IMAGEHLP_LINE64));
-		line->SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+		line = (IMAGEHLP_LINE*)malloc(sizeof(IMAGEHLP_LINE));
+		line->SizeOfStruct = sizeof(IMAGEHLP_LINE);
 
 		//try to get line
-		if (SymGetLineFromAddr64(process, stack.AddrPC.Offset, &disp, line))
+		if (SymGetLineFromAddr(process, stack.AddrPC.Offset, &disp, line))
 		{
-			trace("\tat %s in %s: line: %lu: address: 0x%0X\n", pSymbol->Name, line->FileName, line->LineNumber, pSymbol->Address);
+			trace("\tat %s in %s: line: %lu: address: 0x%I64x\n", pSymbol->Name, line->FileName, line->LineNumber, pSymbol->Address);
 		}
 		else
 		{
-			//failed to get line
-			trace("\tat %s, address 0x%0X.\n", pSymbol->Name, pSymbol->Address);
 			hModule = NULL;
 			lstrcpyA(module, "");
 			GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
 				(LPCTSTR)(stack.AddrPC.Offset), &hModule);
 
 			//at least print module name
-			if (hModule != NULL) GetModuleFileNameA(hModule, module, STACK_MAX_NAME_LENGTH);
+			if (hModule != NULL)
+				GetModuleFileNameA(hModule, module, STACK_MAX_NAME_LENGTH);
 
 			trace("in %s\n", module);
+
+			//failed to get line
+			trace("\tat %s, address 0x%I64x\n", pSymbol->Name, pSymbol->Address);
 		}
 
 		free(line);
