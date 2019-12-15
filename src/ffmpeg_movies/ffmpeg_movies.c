@@ -64,7 +64,6 @@ uint movie_frames;
 uint movie_width, movie_height;
 double movie_fps;
 double movie_duration;
-uint movie_frames;
 
 bool skip_frames;
 bool skipping_frames;
