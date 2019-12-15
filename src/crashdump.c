@@ -150,7 +150,6 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 	static bool had_exception = false;
 	char filename[4096];
 	bool save;
-	LPVOID lpExceptionString;
 
 	// give up if we crash again inside the exception handler (this function)
 	if(had_exception)
@@ -160,19 +159,7 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 
-	FormatMessage(
-			FORMAT_MESSAGE_ALLOCATE_BUFFER |
-			FORMAT_MESSAGE_FROM_SYSTEM |
-			FORMAT_MESSAGE_FROM_HMODULE,
-			NULL,
-			ep->ExceptionRecord->ExceptionCode,
-			MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
-			(LPTSTR)&lpExceptionString,
-			0,
-			NULL
-	);
-
-	trace("*** Exception 0x%x occured: %s ***\n", ep->ExceptionRecord->ExceptionCode, lpExceptionString);
+	trace("*** Exception 0x%x, address 0x%x ***", ep->ExceptionRecord->ExceptionCode, ep->ExceptionRecord->ExceptionAddress);
 	printStack(ep->ContextRecord);
 
 	had_exception = true;
