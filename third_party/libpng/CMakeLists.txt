@@ -11,5 +11,5 @@ ExternalProject_Add(
 		"-DCMAKE_PREFIX_PATH=<INSTALL_DIR>"
 		"-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
 	DEPENDS
-	zlib
+	ffmpeg # it depends on zlib, which comes precompiled via ffmpeg
 )

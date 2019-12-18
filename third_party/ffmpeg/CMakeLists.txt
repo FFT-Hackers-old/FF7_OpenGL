@@ -1,12 +1,18 @@
 include(ExternalProject)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+	set(FFMPEG_LIB_DIR "<SOURCE_DIR>/installed/x86-msvc-v142-static/lib")
+else()
+	set(FFMPEG_LIB_DIR "<SOURCE_DIR>/installed/x86-msvc-v142-static/debug/lib")
+endif()
+
 ExternalProject_Add(
 	ffmpeg
-	URL                 "https://github.com/FFT-Hackers/ffmpeg-msvc-build/releases/download/4.2.1/ffmpeg-4.2.1-1529dfb7-gpl3-v142-static-mt-release-x86.zip"
+	URL                 "https://github.com/FFT-Hackers/ffmpegCI/releases/download/4.2.1/ffmpeg-v4.2.1.0.zip"
 	INSTALL_DIR			"${CMAKE_BINARY_DIR}/vendor"
 	CONFIGURE_COMMAND	""
 	BUILD_COMMAND		""
-	INSTALL_COMMAND		"${CMAKE_COMMAND}" -E copy_directory "<SOURCE_DIR>" "<INSTALL_DIR>"
-	DEPENDS
-	x264
+	INSTALL_COMMAND
+		COMMAND "${CMAKE_COMMAND}" -E copy_directory "${FFMPEG_LIB_DIR}" "<INSTALL_DIR>/lib"
+		COMMAND "${CMAKE_COMMAND}" -E copy_directory "<SOURCE_DIR>/installed/x86-msvc-v142-static/include" "<INSTALL_DIR>/include"
 )

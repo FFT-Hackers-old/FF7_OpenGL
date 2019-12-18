@@ -32,10 +32,9 @@ if (SUPERBUILD)
 			"-D_DLL_VERSION=${_DLL_VERSION}"
 		DEPENDS
 		glew
-		zlib
+		ffmpeg
 		libpng
 		libconfuse
-		ffmpeg
 		vgmstream
 	)
 	ExternalProject_Add_Step(
