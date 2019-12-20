@@ -159,7 +159,7 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 
-	trace("*** Exception 0x%x, address 0x%x ***", ep->ExceptionRecord->ExceptionCode, ep->ExceptionRecord->ExceptionAddress);
+	trace("*** Exception 0x%x, address 0x%x ***\n", ep->ExceptionRecord->ExceptionCode, ep->ExceptionRecord->ExceptionAddress);
 	printStack(ep->ContextRecord);
 
 	had_exception = true;
