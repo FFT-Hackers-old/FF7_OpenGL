@@ -611,6 +611,9 @@ void common_unload_texture(struct texture_set *texture_set)
 	// do not delete modpath textures directly
 	if(!VREF(texture_set, ogl.external)) glDeleteTextures(VREF(texture_set, ogl.gl_set->textures), VREF(texture_set, texturehandle));
 
+	// remove modpath cache reference
+	ext_cache_release(VPTR(texture_set));
+
 	driver_free(VREF(texture_set, texturehandle));
 	driver_free(VREF(texture_set, ogl.gl_set));
 
@@ -620,9 +623,6 @@ void common_unload_texture(struct texture_set *texture_set)
 	stats.texture_count--;
 
 	if(VREF(texture_set, ogl.external)) stats.external_textures--;
-
-	// remove modpath cache reference
-	ext_cache_release(VPTR(texture_set));
 
 	// remove any other references to this texture
 	gl_check_deferred(VPTR(texture_set));

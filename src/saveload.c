@@ -135,8 +135,6 @@ void ext_cache_release(struct texture_set *texture_set)
 	if(!VREF(texture_set, ogl.external)) return;
 	if((uint)VREF(tex_header, file.pc_name) > 32)
 	{
-		if (!VREF(texture_set, ogl.gl_set)) return;
-
 		for(i = 0; i < VREF(texture_set, ogl.gl_set->textures); i++)
 		{
 			if(VREF(texture_set, texturehandle[i]))
