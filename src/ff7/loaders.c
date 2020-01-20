@@ -39,7 +39,7 @@ uint get_frame_data_size(struct anim_header *anim_header)
 struct anim_header *load_animation(struct file_context *file_context, char *filename)
 {
 	struct ff7_file *file = open_file(file_context, filename);
-	struct anim_header *ret;
+	struct anim_header *ret = NULL;
 	uint size;
 	uint i;
 	uint data_pointer;

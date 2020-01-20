@@ -115,12 +115,12 @@ void ff7gl_field_78(struct ff7_polygon_set *polygon_set, struct ff7_game_obj *ga
 {
 	struct matrix_set *matrix_set;
 	struct struc_49 *struc_49;
-	struct p_hundred *hundred_data = 0;
-	struct p_group *group_data = 0;
-	struct matrix *matrix = 0;
+	struct p_hundred *hundred_data = NULL;
+	struct p_group *group_data = NULL;
+	struct matrix *matrix = NULL;
 	struct struc_77 *struc_77;
-	struct indexed_primitive *ip = 0;
-	struct nvertex *vertices;
+	struct indexed_primitive *ip = NULL;
+	struct nvertex *vertices = NULL;
 	struct struc_84 *struc_84;
 	struct struc_186 *struc_186;
 	uint instance_type = -1;

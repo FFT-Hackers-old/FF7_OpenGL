@@ -200,7 +200,7 @@ struct game_mode *getmode()
 				if(m->mode != *common_externals._mode && m->trace)
 				{
 					uint j;
-					struct game_mode *_m;
+					struct game_mode *_m = NULL;
 
 					for(j = 0; j < num_modes - 1; j++)
 					{
@@ -683,21 +683,21 @@ bool load_external_texture(struct texture_set *texture_set, struct tex_header *t
 
 		if(trace_loaders) trace("texture file name: %s\n", VREF(tex_header, file.pc_name));
 
-		if(!strnicmp(VREF(tex_header, file.pc_name), "field", strlen("field") - 1)) use_compression = false;
+		if(!_strnicmp(VREF(tex_header, file.pc_name), "field", strlen("field") - 1)) use_compression = false;
 
 		texture = load_texture(VREF(tex_header, file.pc_name), VREF(tex_header, palette_index), VREFP(texture_set, ogl.width), VREFP(texture_set, ogl.height), use_compression);
 
-		if(!strnicmp(VREF(tex_header, file.pc_name), "world", strlen("world") - 1)) gl_set->force_filter = true;
+		if(!_strnicmp(VREF(tex_header, file.pc_name), "world", strlen("world") - 1)) gl_set->force_filter = true;
 
-		if(!strnicmp(VREF(tex_header, file.pc_name), "menu/usfont", strlen("menu/usfont") - 1))
+		if(!_strnicmp(VREF(tex_header, file.pc_name), "menu/usfont", strlen("menu/usfont") - 1))
 		{
 			gl_set->force_filter = true;
 			gl_set->force_zsort = true;
 		}
 
-		if(!strnicmp(VREF(tex_header, file.pc_name), "menu/btl_win", strlen("menu/btl_win") - 1)) gl_set->force_zsort = true;
+		if(!_strnicmp(VREF(tex_header, file.pc_name), "menu/btl_win", strlen("menu/btl_win") - 1)) gl_set->force_zsort = true;
 
-		if(!strnicmp(VREF(tex_header, file.pc_name), "flevel/hand_1", strlen("flevel/hand_1") - 1)) gl_set->force_filter = true;
+		if(!_strnicmp(VREF(tex_header, file.pc_name), "flevel/hand_1", strlen("flevel/hand_1") - 1)) gl_set->force_filter = true;
 	}
 
 	if(texture)

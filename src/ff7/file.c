@@ -135,7 +135,7 @@ bool original_lgp_open_file(char *filename, uint lgp_num, struct lgp_file *ret)
 		{
 			struct lgp_toc_entry *toc_entry = &ff7_externals.lgp_tocs[lgp_num * 2][toc_offset + i - 1];
 
-			if(!_stricmp(toc_entry->name, filename))
+			if(!_strnicmp(toc_entry->name, filename, strlen(filename)))
 			{
 				if(!toc_entry->conflict)
 				{
@@ -154,7 +154,7 @@ bool original_lgp_open_file(char *filename, uint lgp_num, struct lgp_file *ret)
 					// current directory in the conflict table
 					for(i = 0; i < num_conflicts; i++)
 					{
-						if(!_stricmp(conflict_entries[i].name, lgp_current_dir))
+						if(!_strnicmp(conflict_entries[i].name, lgp_current_dir, strlen(lgp_current_dir)))
 						{
 							struct lgp_toc_entry *toc_entry = &ff7_externals.lgp_tocs[lgp_num * 2][conflict_entries[i].toc_index];
 
@@ -178,7 +178,7 @@ bool original_lgp_open_file(char *filename, uint lgp_num, struct lgp_file *ret)
 	{
 		struct lgp_toc_entry *toc_entry = &ff7_externals.lgp_tocs[lgp_num * 2][i];
 
-		if(!_stricmp(toc_entry->name, filename))
+		if(!_strnicmp(toc_entry->name, filename, strlen(filename)))
 		{
 			glitch("broken LGP file (%s), don't use LGP Tools!\n", lgp_names[lgp_num]);
 
@@ -306,7 +306,7 @@ uint lgp_get_filesize(struct lgp_file *file, uint lgp_num)
 	{
 		struct stat s;
 
-		fstat(fileno(file->fd), &s);
+		fstat(_fileno(file->fd), &s);
 
 		return s.st_size;
 	}
@@ -393,7 +393,7 @@ struct ff7_file *open_file(struct file_context *file_context, char *filename)
 error:
 	// it's normal for save files to be missing, anything else is probably
 	// going to cause trouble
-	if(file_context->use_lgp || _stricmp(&_filename[strlen(_filename) - 4], ".ff7")) error("could not open file %s\n", filename);
+	if(file_context->use_lgp || _strnicmp(&_filename[strlen(_filename) - 4], ".ff7", 4)) error("could not open file %s\n", filename);
 	close_file(ret);
 	return 0;
 }
@@ -492,7 +492,7 @@ uint get_filesize(struct ff7_file *file)
 	else
 	{
 		struct stat s;
-		fstat(fileno(file->fd->fd), &s);
+		fstat(_fileno(file->fd->fd), &s);
 
 		return s.st_size;
 	}
@@ -541,8 +541,8 @@ char *make_pc_name(struct file_context *file_context, struct ff7_file *file, cha
 	{
 		if(ret[i] == '.')
 		{
-			if(!stricmp(&ret[i], ".tex")) ret[i] = 0;
-			else if(!stricmp(&ret[i], ".p")) ret[i] = 0;
+			if(!_strnicmp(&ret[i], ".tex", 4)) ret[i] = 0;
+			else if(!_strnicmp(&ret[i], ".p", 2)) ret[i] = 0;
 			else ret[i] = '_';
 		}
 	}

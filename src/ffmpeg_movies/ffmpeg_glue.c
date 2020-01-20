@@ -107,10 +107,10 @@ int ffmpeg_open(char *name, int access, int mode)
 
 	access |= O_BINARY;
 
-	return open(name, access);
+	return _open(name, access);
 }
 
 int ffmpeg_lseek(int fd, int pos, int whence)
 {
-	return lseek(fd, pos, whence);
+	return _lseek(fd, pos, whence);
 }

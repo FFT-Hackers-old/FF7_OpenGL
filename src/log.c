@@ -167,7 +167,7 @@ void debug_printf(const char *prefix, bool popup, uint color, const char *fmt, .
 
 		if(popup_log[popup_log_index]) free(popup_log[popup_log_index]);
 
-		popup_log[popup_log_index] = strdup(tmp_str2);
+		popup_log[popup_log_index] = _strdup(tmp_str2);
 
 		popup_log_index = (popup_log_index + 1) % POPUP_LOG_LENGTH;
 
