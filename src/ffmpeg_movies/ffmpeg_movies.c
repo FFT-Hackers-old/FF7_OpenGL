@@ -555,7 +555,6 @@ void draw_yuv_frame(uint buffer_index, bool full_range)
 __declspec(dllexport) bool update_movie_sample()
 {
 	AVPacket packet;
-	bool frame_finished = false;
 	int ret;
 	time_t now;
 	DWORD DSStatus;
@@ -574,18 +573,21 @@ __declspec(dllexport) bool update_movie_sample()
 		if(packet.stream_index == videostream)
 		{
 			ret = avcodec_send_packet(codec_ctx, &packet);
-			// In particular, we don't expect AVERROR(EAGAIN), because we read all
-			// decoded frames with avcodec_receive_frame() until done.
-			if (ret < 0)
-				return ret == AVERROR_EOF ? 0 : ret;
+
+			if (ret < 0) {
+				trace("%s: avcodec_send_packet -> %d\n", __func__, ret);
+				break;
+			}
 
 			ret = avcodec_receive_frame(codec_ctx, movie_frame);
-			if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
-				return ret;
-			if (ret >= 0)
-				frame_finished = 1;
 
-			if(frame_finished)
+			if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
+			{
+				trace("%s: avcodec_receive_frame -> %d\n", __func__, ret);
+				break;
+			}
+
+			if (ret >= 0)
 			{
 				QueryPerformanceCounter((LARGE_INTEGER *)&now);
 
@@ -656,18 +658,22 @@ __declspec(dllexport) bool update_movie_sample()
 			}
 
 			ret = avcodec_send_packet(acodec_ctx, &packet);
-			// In particular, we don't expect AVERROR(EAGAIN), because we read all
-			// decoded frames with avcodec_receive_frame() until done.
-			if (ret < 0)
-				return ret == AVERROR_EOF ? 0 : ret;
+
+			if (ret < 0) {
+				trace("%s: avcodec_send_packet -> %d\n", __func__, ret);
+				break;
+			}
 
 			ret = avcodec_receive_frame(acodec_ctx, movie_frame);
-			if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
-				return ret;
-			if (ret >= 0)
-				frame_finished = 1;
 
-			if (frame_finished) {
+			if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
+			{
+				trace("%s: avcodec_receive_frame -> %d\n", __func__, ret);
+				break;
+			}
+
+			if (ret >= 0)
+			{
 				int _size = bytesperpacket * movie_frame->nb_samples * acodec_ctx->channels;
 
 				// Sometimes the captured frame may have no sound samples. Just skip and move forward
