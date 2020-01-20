@@ -1990,6 +1990,8 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 			windows_error(0);
 		}
 
+		SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)LoadIcon(VREF(game_object, hinstance), MAKEINTRESOURCE(101)));
+
 		ShowWindow(hwnd, SW_SHOW);
 
 		VRASS(game_object, hwnd, hwnd);
