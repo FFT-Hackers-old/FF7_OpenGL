@@ -34,7 +34,7 @@
 #define error(x, ...) debug_printf("ERROR", true, text_colors[TEXTCOLOR_RED], (x), __VA_ARGS__)
 #define info(x, ...) debug_printf("INFO", info_popup, text_colors[TEXTCOLOR_WHITE], (x), __VA_ARGS__)
 #define dump(x, ...) debug_printf("DUMP", false, text_colors[TEXTCOLOR_PINK], (x), __VA_ARGS__)
-#define trace(x, ...) debug_printf("TRACE", true, text_colors[TEXTCOLOR_GREEN], (x), __VA_ARGS__)
+#define trace(x, ...) debug_printf("TRACE", false, text_colors[TEXTCOLOR_GREEN], (x), __VA_ARGS__)
 #define glitch(x, ...) debug_printf("GLITCH", true, text_colors[TEXTCOLOR_YELLOW], (x), __VA_ARGS__)
 #define unexpected(x, ...) debug_printf("UNEXPECTED", true, text_colors[TEXTCOLOR_LIGHT_BLUE], (x), __VA_ARGS__)
 
