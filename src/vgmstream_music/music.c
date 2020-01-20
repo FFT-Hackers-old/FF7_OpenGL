@@ -1,3 +1,10 @@
+#ifdef DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+#endif
+
 #include <windows.h>
 #include <dsound.h>
 #include <vgmstream.h>
@@ -41,6 +48,18 @@ static char *crossfade_midi;
 
 static int master_volume;
 static int song_volume;
+
+BOOL APIENTRY DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
+{
+#ifdef DEBUG
+	int crtDbg = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+	crtDbg |= _CRTDBG_LEAK_CHECK_DF;
+	crtDbg &= ~_CRTDBG_CHECK_CRT_DF;
+	_CrtSetDbgFlag(crtDbg);
+#endif
+
+	return TRUE;
+}
 
 void apply_volume()
 {

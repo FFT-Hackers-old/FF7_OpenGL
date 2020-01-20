@@ -1,4 +1,12 @@
 #define inline _inline
+
+#ifdef DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+#endif
+
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
@@ -92,6 +100,13 @@ IDirectSound **directsound;
 
 BOOL APIENTRY DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
 {
+#ifdef DEBUG
+	int crtDbg = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+	crtDbg |= _CRTDBG_LEAK_CHECK_DF;
+	crtDbg &= ~_CRTDBG_CHECK_CRT_DF;
+	_CrtSetDbgFlag(crtDbg);
+#endif
+
 	return TRUE;
 }
 

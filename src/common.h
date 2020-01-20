@@ -23,6 +23,13 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
+#ifdef DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <crtdbg.h>
+#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+#define new DEBUG_NEW
+#endif
+
 #include <time.h>
 #include <malloc.h>
 #include <stdio.h>

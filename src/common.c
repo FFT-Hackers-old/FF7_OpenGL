@@ -1841,6 +1841,7 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 	DEVMODE dmScreenSettings;
 
 	open_applog("app.log");
+
 	info("FF7/FF8 OpenGL driver version " VERSION PRERELEASE_WARNING "\n");
 
 	version = get_version();
@@ -2159,5 +2160,12 @@ __declspec(dllexport) void *new_dll_graphics_driver(void *game_object)
 
 BOOL APIENTRY DllMain(HANDLE hInst, ULONG ul_reason_for_call, LPVOID lpReserved)
 {
+#ifdef DEBUG
+	int crtDbg = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
+	crtDbg |= _CRTDBG_LEAK_CHECK_DF;
+	crtDbg &= ~_CRTDBG_CHECK_CRT_DF;
+	_CrtSetDbgFlag(crtDbg);
+#endif
+
 	return TRUE;
 }
