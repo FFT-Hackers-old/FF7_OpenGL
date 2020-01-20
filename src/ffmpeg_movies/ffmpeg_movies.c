@@ -216,8 +216,6 @@ void ffmpeg_log_callback(void* ptr, int level, const char* fmt, va_list vl)
 
 __declspec(dllexport) void movie_init(void *plugin_trace, void *plugin_info, void *plugin_glitch, void *plugin_error, void *plugin_draw_movie_quad_bgra, void *plugin_draw_movie_quad_yuv, IDirectSound **plugin_directsound, bool plugin_skip_frames, bool plugin_movie_sync_debug)
 {
-	av_register_all();
-
 	av_log_set_level(AV_LOG_VERBOSE);
 	av_log_set_callback(ffmpeg_log_callback);
 
@@ -560,7 +558,17 @@ __declspec(dllexport) bool update_movie_sample()
 	{
 		if(packet.stream_index == videostream)
 		{
-			avcodec_decode_video2(codec_ctx, movie_frame, &frame_finished, &packet);
+			ret = avcodec_send_packet(codec_ctx, &packet);
+			// In particular, we don't expect AVERROR(EAGAIN), because we read all
+			// decoded frames with avcodec_receive_frame() until done.
+			if (ret < 0)
+				return ret == AVERROR_EOF ? 0 : ret;
+
+			ret = avcodec_receive_frame(codec_ctx, movie_frame);
+			if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
+				return ret;
+			if (ret >= 0)
+				frame_finished = 1;
 
 			if(frame_finished)
 			{
@@ -619,8 +627,6 @@ __declspec(dllexport) bool update_movie_sample()
 			uint8_t *buffer;
 			int buffer_size = 0;
 			int used_bytes;
-			char* packet_data = packet.data;
-			uint packet_size = packet.size;
 			uint playcursor;
 			uint writecursor;
 			uint bytesperpacket = audio_must_be_converted ? 2 : (acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2);
@@ -634,44 +640,42 @@ __declspec(dllexport) bool update_movie_sample()
 				info("update_movie_sample(audio): DTS %f PTS %f (timebase %f) placed in sound buffer at real time %f (play %f write %f)\n", (double)packet.dts, (double)packet.pts, av_q2d(acodec_ctx->time_base), (double)(now - start_time) / (double)timer_freq, (double)playcursor / (double)bytespersec, (double)write_pointer / (double)bytespersec);
 			}
 
-			while (packet_size > 0)
-			{
-				used_bytes = avcodec_decode_audio4(acodec_ctx, movie_frame, &frame_finished, &packet);
+			ret = avcodec_send_packet(acodec_ctx, &packet);
+			// In particular, we don't expect AVERROR(EAGAIN), because we read all
+			// decoded frames with avcodec_receive_frame() until done.
+			if (ret < 0)
+				return ret == AVERROR_EOF ? 0 : ret;
 
-				if (used_bytes < 0)
-				{
-					error("update_movie_sample: avcodec_decode_audio4() failed, code %d\n", used_bytes);
-					break;
-				}
+			ret = avcodec_receive_frame(acodec_ctx, movie_frame);
+			if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
+				return ret;
+			if (ret >= 0)
+				frame_finished = 1;
 
-				packet_data += used_bytes;
-				packet_size -= used_bytes;
+			if (frame_finished) {
+				int _size = bytesperpacket * movie_frame->nb_samples * movie_frame->channels;
 
-				if (frame_finished) {
-					int _size = bytesperpacket * movie_frame->nb_samples * movie_frame->channels;
+				char* ptr1;
+				char* ptr2;
+				uint bytes1;
+				uint bytes2;
 
-					char* ptr1;
-					char* ptr2;
-					uint bytes1;
-					uint bytes2;
+				av_samples_alloc(&buffer, movie_frame->linesize, acodec_ctx->channels, movie_frame->nb_samples, (audio_must_be_converted ? AV_SAMPLE_FMT_S16 : acodec_ctx->sample_fmt), 0);
+				if (audio_must_be_converted) swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->extended_data, movie_frame->nb_samples);
+				else av_samples_copy(&buffer, movie_frame->extended_data, 0, 0, movie_frame->nb_samples, acodec_ctx->channels, acodec_ctx->sample_fmt);
 
-					av_samples_alloc(&buffer, movie_frame->linesize, acodec_ctx->channels, movie_frame->nb_samples, (audio_must_be_converted ? AV_SAMPLE_FMT_S16 : acodec_ctx->sample_fmt), 0);
-					if (audio_must_be_converted) swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->extended_data, movie_frame->nb_samples);
-					else av_samples_copy(&buffer, movie_frame->extended_data, 0, 0, movie_frame->nb_samples, acodec_ctx->channels, acodec_ctx->sample_fmt);
-
-					if (sound_buffer) {
-						if (IDirectSoundBuffer_GetStatus(sound_buffer, &DSStatus) == DS_OK) {
-							if (DSStatus != DSBSTATUS_BUFFERLOST) {
-								if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("update_movie_sample: couldn't lock sound buffer\n");
-								memcpy(ptr1, buffer, bytes1);
-								memcpy(ptr2, &buffer[bytes1], bytes2);
-								if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("update_movie_sample: couldn't unlock sound buffer\n");
-							}
+				if (sound_buffer) {
+					if (IDirectSoundBuffer_GetStatus(sound_buffer, &DSStatus) == DS_OK) {
+						if (DSStatus != DSBSTATUS_BUFFERLOST) {
+							if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("update_movie_sample: couldn't lock sound buffer\n");
+							memcpy(ptr1, buffer, bytes1);
+							memcpy(ptr2, &buffer[bytes1], bytes2);
+							if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("update_movie_sample: couldn't unlock sound buffer\n");
 						}
-						
-						write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
-						av_freep(&buffer);
 					}
+						
+					write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
+					av_freep(&buffer);
 				}
 			}
 
