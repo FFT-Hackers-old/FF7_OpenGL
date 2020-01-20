@@ -5,10 +5,10 @@ find_package(CONFUSE REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(VGMSTREAM REQUIRED)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-	set(RELEASE_TYPE "DEBUG")
-else()
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
 	set(RELEASE_TYPE "RELEASE")
+else()
+	set(RELEASE_TYPE "DEBUG")
 endif()
 
 # Include all the source code files
