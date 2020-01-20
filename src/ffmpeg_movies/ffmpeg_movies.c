@@ -540,7 +540,7 @@ void draw_yuv_frame(uint buffer_index, bool full_range)
 __declspec(dllexport) bool update_movie_sample()
 {
 	AVPacket packet;
-	bool frame_finished;
+	bool frame_finished = false;
 	int ret;
 	time_t now;
 	DWORD DSStatus;
@@ -629,7 +629,7 @@ __declspec(dllexport) bool update_movie_sample()
 			int used_bytes;
 			uint playcursor;
 			uint writecursor;
-			uint bytesperpacket = audio_must_be_converted ? 2 : (acodec_ctx->sample_fmt == AV_SAMPLE_FMT_U8 ? 1 : 2);
+			uint bytesperpacket = audio_must_be_converted ? av_get_bytes_per_sample(AV_SAMPLE_FMT_S16) : av_get_bytes_per_sample(acodec_ctx->sample_fmt);
 			uint bytespersec = bytesperpacket * acodec_ctx->channels * acodec_ctx->sample_rate;
 
 			QueryPerformanceCounter((LARGE_INTEGER *)&now);
@@ -653,33 +653,35 @@ __declspec(dllexport) bool update_movie_sample()
 				frame_finished = 1;
 
 			if (frame_finished) {
-				int _size = bytesperpacket * movie_frame->nb_samples * movie_frame->channels;
+				int _size = bytesperpacket * movie_frame->nb_samples * acodec_ctx->channels;
 
-				char* ptr1;
-				char* ptr2;
-				uint bytes1;
-				uint bytes2;
+				// Sometimes the captured frame may have no sound samples. Just skip and move forward
+				if (_size)
+				{
+					char* ptr1;
+					char* ptr2;
+					uint bytes1;
+					uint bytes2;
 
-				av_samples_alloc(&buffer, movie_frame->linesize, acodec_ctx->channels, movie_frame->nb_samples, (audio_must_be_converted ? AV_SAMPLE_FMT_S16 : acodec_ctx->sample_fmt), 0);
-				if (audio_must_be_converted) swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->extended_data, movie_frame->nb_samples);
-				else av_samples_copy(&buffer, movie_frame->extended_data, 0, 0, movie_frame->nb_samples, acodec_ctx->channels, acodec_ctx->sample_fmt);
+					av_samples_alloc(&buffer, movie_frame->linesize, acodec_ctx->channels, movie_frame->nb_samples, (audio_must_be_converted ? AV_SAMPLE_FMT_S16 : acodec_ctx->sample_fmt), 0);
+					if (audio_must_be_converted) swr_convert(swr_ctx, &buffer, movie_frame->nb_samples, movie_frame->extended_data, movie_frame->nb_samples);
+					else av_samples_copy(&buffer, movie_frame->extended_data, 0, 0, movie_frame->nb_samples, acodec_ctx->channels, acodec_ctx->sample_fmt);
 
-				if (sound_buffer) {
-					if (IDirectSoundBuffer_GetStatus(sound_buffer, &DSStatus) == DS_OK) {
-						if (DSStatus != DSBSTATUS_BUFFERLOST) {
-							if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("update_movie_sample: couldn't lock sound buffer\n");
-							memcpy(ptr1, buffer, bytes1);
-							memcpy(ptr2, &buffer[bytes1], bytes2);
-							if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("update_movie_sample: couldn't unlock sound buffer\n");
+					if (sound_buffer) {
+						if (IDirectSoundBuffer_GetStatus(sound_buffer, &DSStatus) == DS_OK) {
+							if (DSStatus != DSBSTATUS_BUFFERLOST) {
+								if (IDirectSoundBuffer_Lock(sound_buffer, write_pointer, _size, &ptr1, &bytes1, &ptr2, &bytes2, 0)) error("update_movie_sample: couldn't lock sound buffer\n");
+								memcpy(ptr1, buffer, bytes1);
+								memcpy(ptr2, &buffer[bytes1], bytes2);
+								if (IDirectSoundBuffer_Unlock(sound_buffer, ptr1, bytes1, ptr2, bytes2)) error("update_movie_sample: couldn't unlock sound buffer\n");
+							}
 						}
+
+						write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
+						av_freep(&buffer);
 					}
-						
-					write_pointer = (write_pointer + bytes1 + bytes2) % sound_buffer_size;
-					av_freep(&buffer);
 				}
 			}
-
-			av_packet_unref(&packet);
 		}
 
 		av_packet_unref(&packet);
