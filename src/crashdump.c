@@ -241,7 +241,7 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 	}
 
 #ifdef RELEASE
-	error("Unhandled Exception.\n");
+	error("Unhandled Exception. For a more detailed stacktrace, please download the latest Debug release here https://github.com/FFT-Hackers/FF7_OpenGL/releases and try again.\n");
 #else
 	error("Unhandled Exception. See dumped information above.\n");
 #endif
