@@ -348,6 +348,10 @@ void common_flip(struct game_obj *game_object)
 	time_t last_seconds = last_frame.time;
 	struct game_mode *mode = getmode();
 
+	char newWindowTitle[1024];
+
+	strcpy_s(newWindowTitle, 1024, VREF(game_object, window_title));
+
 	if(trace_all) trace("dll_gfx: flip (%i)\n", frame_counter);
 
 	// draw any z-sorted content now that we're done drawing everything else
@@ -363,56 +367,78 @@ void common_flip(struct game_obj *game_object)
 		GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&pmc, sizeof(pmc));
 		ram_size = pmc.WorkingSetSize;
 
-		gl_draw_text(8, 8, text_colors[TEXTCOLOR_PINK], 255, 
+		if (fullscreen)
+		{
+			gl_draw_text(8, 8, text_colors[TEXTCOLOR_PINK], 255,
 #ifdef HEAP_DEBUG
-		                   "Allocations: %u\n"
+				"Allocations: %u\n"
 #endif
 #ifdef PROFILE
-						   "Profiling: %I64u us\n"
+				"Profiling: %I64u us\n"
 #endif
-		                   "RAM usage: %uMB\n"
-		                   "textures: %u\n"
-		                   "external textures: %u\n"
-		                   "ext. cache size: %uMB\n"
-		                   "texture reloads: %u\n"
-		                   "palette writes: %u\n"
-		                   "palette changes: %u\n"
-		                   "zsort layers: %u\n"
-		                   "vertices: %u\n"
-		                   "timer: %I64u\n", 
+				"RAM usage: %uMB\n"
+				"textures: %u\n"
+				"external textures: %u\n"
+				"ext. cache size: %uMB\n"
+				"texture reloads: %u\n"
+				"palette writes: %u\n"
+				"palette changes: %u\n"
+				"zsort layers: %u\n"
+				"vertices: %u\n"
+				"timer: %I64u\n",
 #ifdef HEAP_DEBUG
-						   allocs,
+				allocs,
 #endif
 #ifdef PROFILE
-						   (time_t)((profile_total * 1000000.0) / VREF(game_object, countspersecond)),
+				(time_t)((profile_total * 1000000.0) / VREF(game_object, countspersecond)),
 #endif
-	                       ram_size / (1024 * 1024), 
-		                   stats.texture_count, 
-		                   stats.external_textures, 
-						   stats.ext_cache_size / (1024 * 1024), 
-		                   stats.texture_reloads, 
-		                   stats.palette_writes, 
-		                   stats.palette_changes, 
-		                   stats.deferred, 
-		                   stats.vertex_count, 
-		                   stats.timer
-		                   );
+				ram_size / (1024 * 1024),
+				stats.texture_count,
+				stats.external_textures,
+				stats.ext_cache_size / (1024 * 1024),
+				stats.texture_reloads,
+				stats.palette_writes,
+				stats.palette_changes,
+				stats.deferred,
+				stats.vertex_count,
+				stats.timer
+			);
+		}
+		else
+		{
+			char tmp[768];
+			sprintf_s(tmp, 768, " | RAM: %u MB | nTex: %u | nExt.Tex: %u | Cache: %u MB", ram_size / (1024 * 1024), stats.texture_count, stats.external_textures, (stats.ext_cache_size / (1024 * 1024)));
+			strcat_s(newWindowTitle, 1024, tmp);
+		}
 	}
 
 	if(show_fps)
 	{
-		// average last two seconds and round up for our FPS counter
-		gl_draw_text(width - (2 * 16 + 8), 8, text_colors[TEXTCOLOR_YELLOW], 255, "%2i", (fps_counters[1] + fps_counters[2] + 1) / 2);
+		if (fullscreen)
+		{
+			// average last two seconds and round up for our FPS counter
+			gl_draw_text(width - (2 * 16 + 8), 8, text_colors[TEXTCOLOR_YELLOW], 255, "%2i", (fps_counters[1] + fps_counters[2] + 1) / 2);
+		}
+		else
+		{
+			char tmp[64];
+			sprintf_s(tmp, 64, " | FPS: %2i", (fps_counters[1] + fps_counters[2] + 1) / 2);
+			strcat_s(newWindowTitle, 1024, tmp);
+		}
+
 		fps_counters[0]++;
 		ftime(&last_frame);
 
-		if(last_seconds != last_frame.time)
+		if (last_seconds != last_frame.time)
 		{
 			fps_counters[2] = fps_counters[1];
 			fps_counters[1] = fps_counters[0];
 			fps_counters[0] = 0;
 		}
 	}
+
+	if (!fullscreen)
+		SetWindowText(hwnd, newWindowTitle);
 
 	// if there is an active popup message, display it
 	if(popup_ttl > 0)
