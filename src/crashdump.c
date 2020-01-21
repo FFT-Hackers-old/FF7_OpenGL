@@ -169,15 +169,15 @@ LONG WINAPI ExceptionHandler(EXCEPTION_POINTERS *ep)
 
 	if(!ff8)
 	{
-		MessageBoxA(0, "Oops! Something very bad happened\n\nWrote crash.dmp to FF7 install dir.\nWrote emergency save to save/crash.ff7 dir.\n\n"
-			"Please provide a copy of it along with APP.LOG when reporting this error.\n", "Error", MB_OK);
+		MessageBoxA(0, "Oops! Something very bad happened.\n\nWrote crash.dmp to FF7 install dir.\nWrote emergency save to save/crash.ff7 dir.\n\n"
+			"Please provide a copy of those files along with APP.LOG when reporting this error at https://github.com/FFT-Hackers/FF7_OpenGL/issues.\n", "Error", MB_OK);
 
 		save = true;
 	}
 	else
 	{
-		MessageBoxA(0, "Oops! Something very bad happened\n\nWrote crash.dmp to FF8 install dir.\n\n"
-			"Please provide a copy of it along with APP.LOG when reporting this error.\n", "Error", MB_OK);
+		MessageBoxA(0, "Oops! Something very bad happened.\n\nWrote crash.dmp to FF8 install dir.\n\n"
+			"Please provide a copy of that file along with APP.LOG when reporting this error at https://github.com/FFT-Hackers/FF7_OpenGL/issues.\n", "Error", MB_OK);
 
 		save = false;
 	}
