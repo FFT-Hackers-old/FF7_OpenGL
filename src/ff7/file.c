@@ -528,7 +528,7 @@ char *make_pc_name(struct file_context *file_context, struct ff7_file *file, cha
 {
 	uint i, len;
 	char *backslash;
-	char *ret = external_malloc(1024);
+	char *ret = driver_malloc(1024);
 
 	if(file_context->use_lgp)
 	{
