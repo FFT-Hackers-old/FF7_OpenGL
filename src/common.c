@@ -196,7 +196,6 @@ struct game_mode *getmode()
 		{
 			if(last_mode != m->mode)
 			{
-#ifndef RELEASE
 				if(m->mode != *common_externals._mode && m->trace)
 				{
 					uint j;
@@ -211,7 +210,6 @@ struct game_mode *getmode()
 
 					if (trace_all) trace("getmode: mismatched mode, %s -> %s\n", _m->name, m->name);
 				}
-#endif
 				if(m->trace) trace("%s\n", m->name);
 				last_mode = m->mode;
 			}

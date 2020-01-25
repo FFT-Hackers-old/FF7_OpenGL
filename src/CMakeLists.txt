@@ -5,12 +5,6 @@ find_package(CONFUSE REQUIRED)
 find_package(FFMPEG REQUIRED)
 find_package(VGMSTREAM REQUIRED)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-	set(RELEASE_TYPE "RELEASE")
-else()
-	set(RELEASE_TYPE "DEBUG")
-endif()
-
 # Include all the source code files
 file(GLOB source_files "*.h" "*.c")
 
@@ -27,7 +21,6 @@ target_link_libraries(ff7_opengl
 )
 target_compile_options(ff7_opengl
 	PRIVATE /D_CRT_SECURE_NO_WARNINGS
-	PRIVATE /D${RELEASE_TYPE}
 )
 target_link_options(ff7_opengl PRIVATE /PDBALTPATH:ff7_opengl.pdb)
 if(_DLL_VERSION)
@@ -50,7 +43,6 @@ target_link_libraries(ffmpeg_movies
 )
 target_compile_options(ffmpeg_movies
 	PRIVATE /D_CRT_SECURE_NO_WARNINGS
-	PRIVATE /D${RELEASE_TYPE}
 )
 target_link_options(ffmpeg_movies PRIVATE /PDBALTPATH:ffmpeg_movies.pdb)
 set_target_properties(ffmpeg_movies PROPERTIES PREFIX "")
@@ -64,7 +56,6 @@ target_link_libraries(vgmstream_music
 )
 target_compile_options(vgmstream_music
 	PRIVATE /D_CRT_SECURE_NO_WARNINGS
-	PRIVATE /D${RELEASE_TYPE}
 )
 target_link_options(vgmstream_music PRIVATE /PDBALTPATH:vgmstream_music.pdb)
 set_target_properties(vgmstream_music PROPERTIES PREFIX "")
@@ -75,7 +66,6 @@ target_include_directories(ff7music PRIVATE "${CMAKE_BINARY_DIR}/vendor/include"
 add_subdirectory(ff7music)
 target_compile_options(ff7music
 	PRIVATE /D_CRT_SECURE_NO_WARNINGS
-	PRIVATE /D${RELEASE_TYPE}
 )
 target_link_options(ff7music PRIVATE /PDBALTPATH:ff7music.pdb)
 set_target_properties(ff7music PROPERTIES PREFIX "")
@@ -86,12 +76,10 @@ install(TARGETS ffmpeg_movies RUNTIME DESTINATION bin/plugins)
 install(TARGETS vgmstream_music RUNTIME DESTINATION bin/plugins)
 install(TARGETS ff7music RUNTIME DESTINATION bin/plugins)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-	install(FILES $<TARGET_PDB_FILE:ff7_opengl> DESTINATION bin OPTIONAL)
-	install(FILES $<TARGET_PDB_FILE:ffmpeg_movies> DESTINATION bin/plugins OPTIONAL)
-	install(FILES $<TARGET_PDB_FILE:vgmstream_music> DESTINATION bin/plugins OPTIONAL)
-	install(FILES $<TARGET_PDB_FILE:ff7music> DESTINATION bin/plugins OPTIONAL)
-endif()
+install(FILES $<TARGET_PDB_FILE:ff7_opengl> DESTINATION bin OPTIONAL)
+install(FILES $<TARGET_PDB_FILE:ffmpeg_movies> DESTINATION bin/plugins OPTIONAL)
+install(FILES $<TARGET_PDB_FILE:vgmstream_music> DESTINATION bin/plugins OPTIONAL)
+install(FILES $<TARGET_PDB_FILE:ff7music> DESTINATION bin/plugins OPTIONAL)
 
-install(FILES ../misc/ff7_opengl_${RELEASE_TYPE}.cfg DESTINATION bin OPTIONAL RENAME ff7_opengl.cfg)
+install(FILES ../misc/ff7_opengl.cfg DESTINATION bin OPTIONAL)
 install(FILES ../misc/ff7_opengl.reg DESTINATION bin OPTIONAL)

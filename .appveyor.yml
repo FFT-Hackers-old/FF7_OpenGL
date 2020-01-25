@@ -14,9 +14,7 @@ pull_requests:
   do_not_increment_build_number: true
 
 # Build configurations
-configuration:
-  - RelWithDebInfo
-  - Release
+configuration: RelWithDebInfo
 
 # Default environment variables
 environment:
@@ -37,27 +35,12 @@ before_build:
         $env:_IS_BUILD_CANARY = "true"
       }
 
-for:
-  -
-    matrix:
-      only:
-        - configuration: RelWithDebInfo
-    build_script:
-      - cmd: |
-          md .dist\build\x86-RelWithDebInfo
-          cd .dist/build/x86-RelWithDebInfo
-          cmake -G "Visual Studio 16 2019" -A Win32 -D_DLL_VERSION="%appveyor_build_version%" -DCMAKE_BUILD_TYPE="RelWithDebInfo" -DCMAKE_BINARY_DIR=".dist/build/x86-RelWithDebInfo" --config RelWithDebInfo ../../..
-          cmake --build . --config RelWithDebInfo
-  -
-    matrix:
-      only:
-        - configuration: Release
-    build_script:
-      - cmd: |
-          md .dist\build\x86-Release
-          cd .dist/build/x86-Release
-          cmake -G "Visual Studio 16 2019" -A Win32 -D_DLL_VERSION="%appveyor_build_version%" -DCMAKE_BUILD_TYPE="Release" -DCMAKE_BINARY_DIR=".dist/build/x86-Release" --config Release ../../..
-          cmake --build . --config Release
+build_script:
+  - cmd: |
+      md .dist\build\x86-RelWithDebInfo
+      cd .dist/build/x86-RelWithDebInfo
+      cmake -G "Visual Studio 16 2019" -A Win32 -D_DLL_VERSION="%appveyor_build_version%" -DCMAKE_BUILD_TYPE="RelWithDebInfo" -DCMAKE_BINARY_DIR=".dist/build/x86-RelWithDebInfo" --config RelWithDebInfo ../../..
+      cmake --build . --config RelWithDebInfo
 
 # Do not run unit tests
 test: off
@@ -65,9 +48,6 @@ test: off
 # Package artifacts
 artifacts:
   - path: .dist\build\x86-RelWithDebInfo\bin
-    name: ${_RELEASE_NAME}_debug
-    type: zip
-  - path: .dist\build\x86-Release\bin
     name: ${_RELEASE_NAME}
     type: zip
 
@@ -77,7 +57,7 @@ deploy:
   - provider: GitHub
     tag: ${appveyor_repo_tag_name}
     release: ${_RELEASE_NAME}
-    artifact: ${_RELEASE_NAME}_debug,${_RELEASE_NAME}
+    artifact: ${_RELEASE_NAME}
     auth_token:
       secure: SXUyBqg8+wl9fn3xHV2Br0xDH65EyPAnFwJbwcg94wIesv9osQEefC3zxu9iDTUh
     on:
@@ -86,7 +66,7 @@ deploy:
   - provider: GitHub
     tag: ${appveyor_repo_tag_name}
     release: ${_RELEASE_NAME} v${appveyor_build_version}
-    artifact: ${_RELEASE_NAME}_debug,${_RELEASE_NAME}
+    artifact: ${_RELEASE_NAME}
     prerelease: true
     force_update: true
     auth_token:
