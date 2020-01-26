@@ -180,7 +180,7 @@ struct ext_cache_data *ext_cache_put(char *name, uint palette_index)
 	{
 		if(!ext_cache[i]) continue;
 
-		if(!ext_cache[i]->references && ext_cache[i]->last_access < oldest_access_time)
+		if((force_cache_purge || !ext_cache[i]->references) && ext_cache[i]->last_access < oldest_access_time)
 		{
 			oldest_access_time = ext_cache[i]->last_access;
 			oldest_texture = i;

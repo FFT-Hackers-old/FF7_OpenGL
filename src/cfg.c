@@ -93,6 +93,7 @@ bool info_popup = false;
 char *load_library;
 bool opengl_debug = false;
 bool movie_sync_debug = false;
+bool force_cache_purge = false;
 
 cfg_opt_t opts[] = {
 		CFG_SIMPLE_STR("mod_path", &mod_path),
@@ -158,6 +159,7 @@ cfg_opt_t opts[] = {
 		CFG_SIMPLE_STR("load_library", &load_library),
 		CFG_SIMPLE_BOOL("opengl_debug", &opengl_debug),
 		CFG_SIMPLE_BOOL("movie_sync_debug", &movie_sync_debug),
+		CFG_SIMPLE_BOOL("force_cache_purge", &force_cache_purge),
 
 		CFG_END()
 };

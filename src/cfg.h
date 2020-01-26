@@ -88,6 +88,7 @@ extern bool info_popup;
 extern char *load_library;
 extern bool opengl_debug;
 extern bool movie_sync_debug;
+extern bool force_cache_purge;
 
 void read_cfg();
 
