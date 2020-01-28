@@ -1730,21 +1730,23 @@ bool init_opengl()
 
 	glewInit();
 
-	if(opengl_debug)
+	if (WGLEW_ARB_create_context)
 	{
-		if(WGLEW_ARB_create_context)
-		{
-			static const int attributes[] = { WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB, 0 };
+		static const int attributes[] = {
+			WGL_CONTEXT_MAJOR_VERSION_ARB, 2,
+			WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+			WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+			WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
+			0
+		};
 
-			wglDeleteContext(hRC);
-			hRC = wglCreateContextAttribsARB(hDC, 0, attributes);
-			wglMakeCurrent(hDC, hRC);
+		wglDeleteContext(hRC);
+		hRC = wglCreateContextAttribsARB(hDC, 0, attributes);
+		wglMakeCurrent(hDC, hRC);
 
-			glewInit();
+		glewInit();
 
-			info("OpenGL debug context created.\n");
-		}
-		else info("OpenGL debug context could not be created.\n");
+		info("OpenGL debug context created.\n");
 	}
 
 	info("%s %s %s\n", glGetString(GL_VENDOR), glGetString(GL_RENDERER), glGetString(GL_VERSION));
